@@ -1,0 +1,32 @@
+{
+  "id": "53e5d980-b185-42a1-a5a1-ad9cd5712307",
+  "name": "Rutter API",
+  "publisher": "Rutter API",
+  "version": "1.0.0.0",
+  "brief": "",
+  "description": "",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "",
+  "logo": "",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "20.0.0.0",
+  "application": "20.0.0.0",
+  "idRanges": [
+    {
+      "from": 51300,
+      "to": 52300
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "runtime": "9.0",
+  "features": [
+    "NoImplicitWith"
+  ]
+}

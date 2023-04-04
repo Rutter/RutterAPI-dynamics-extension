@@ -86,7 +86,7 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Currency Id';
                 }
-                field(accountId; Rec."RUT Account Id")
+                field(accountId; AccountId)
                 {
                     Caption = 'Account Id';
                 }
@@ -109,4 +109,18 @@ page 51370 "RUT Vendor Ledger Entries API"
             }
         }
     }
+
+    trigger OnAfterGetRecord()
+    var
+        GLEntry: Record "G/L Entry";
+    begin
+        Clear(AccountId);
+        if GLEntry.Get(Rec."Entry No.") then begin
+            GLEntry.CalcFields("Account Id");
+            AccountId := GLEntry."Account Id";
+        end
+    end;
+
+    var
+        AccountId: Guid;
 }

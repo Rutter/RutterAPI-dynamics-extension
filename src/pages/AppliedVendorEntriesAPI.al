@@ -107,6 +107,10 @@ page 51371 "RUT Applied Vendor Entries API"
                 {
                     Caption = 'Currency Id';
                 }
+                field(accountId; Rec."RUT Account Id")
+                {
+                    Caption = 'Account Id';
+                }
             }
         }
     }

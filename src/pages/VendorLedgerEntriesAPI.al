@@ -86,6 +86,10 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Currency Id';
                 }
+                field(accountId; Rec."RUT Account Id")
+                {
+                    Caption = 'Account Id';
+                }
                 field(Open; Rec.Open)
                 {
                     Caption = 'Open';

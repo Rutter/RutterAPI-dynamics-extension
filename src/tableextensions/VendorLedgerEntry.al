@@ -18,6 +18,14 @@ tableextension 51370 "RUT Vendor Ledger Entry" extends "Vendor Ledger Entry"
             TableRelation = Currency.SystemId;
             Editable = false;
         }
+        field(51372; "RUT Account Id"; Guid)
+        {
+            CalcFormula = Lookup("G/L Entry"."Account Id" WHERE("Entry No." = field("Entry No.")));
+            Caption = 'Account Id';
+            FieldClass = FlowField;
+            TableRelation = "G/L Account".SystemId;
+            Editable = false;
+        }
     }
 }
 

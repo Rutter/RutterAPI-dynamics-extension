@@ -111,6 +111,10 @@ page 51371 "RUT Applied Vendor Entries API"
                 {
                     Caption = 'Account Id';
                 }
+                field(journalId; Rec."RUT Journal Id")
+                {
+                    Caption = 'Journal Id';
+                }
             }
         }
     }

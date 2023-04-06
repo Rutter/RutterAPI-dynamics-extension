@@ -2,7 +2,12 @@ tableextension 51370 "RUT Vendor Ledger Entry" extends "Vendor Ledger Entry"
 {
     fields
     {
-        field(51370; "RUT Vendor Id"; Guid)
+        field(51370; "RUT Journal Id"; Guid)
+        {
+            Caption = 'Journal Id';
+            Editable = false;
+        }
+        field(51371; "RUT Vendor Id"; Guid)
         {
             CalcFormula = Lookup(Vendor.SystemId WHERE("No." = FIELD("Vendor No.")));
             Caption = 'Vendor Id';
@@ -10,7 +15,7 @@ tableextension 51370 "RUT Vendor Ledger Entry" extends "Vendor Ledger Entry"
             TableRelation = Vendor.SystemId;
             Editable = false;
         }
-        field(51371; "RUT Currency Id"; Guid)
+        field(51372; "RUT Currency Id"; Guid)
         {
             CalcFormula = Lookup(Currency.SystemId WHERE(Code = FIELD("Currency Code")));
             Caption = 'Currency Id';

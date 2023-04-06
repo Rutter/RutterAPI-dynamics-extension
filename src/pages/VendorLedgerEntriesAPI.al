@@ -90,6 +90,10 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Account Id';
                 }
+                field(journalId; Rec."RUT Journal Id")
+                {
+                    Caption = 'Journal Id';
+                }
                 field(Open; Rec.Open)
                 {
                     Caption = 'Open';

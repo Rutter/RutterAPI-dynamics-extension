@@ -3,5 +3,6 @@ permissionset 51300 "RUT Rutter API"
     Assignable = true;
     Permissions = page "RUT Applied Vendor Entries API" = X,
         page "RUT Vendor Ledger Entries API" = X,
-        codeunit "RUT Rutter Management" = X;
+        codeunit "RUT Rutter Management" = X,
+        page "RUT Related G/L Entries API" = X;
 }

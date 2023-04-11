@@ -103,6 +103,13 @@ page 51370 "RUT Vendor Ledger Entries API"
                     Caption = 'Remaining Amount';
                     ApplicationArea = All;
                 }
+                part(relatedGLEntries; "RUT Related G/L Entries API")
+                {
+                    Caption = 'Related G/L Entries';
+                    EntityName = 'relatedGLEntry';
+                    EntitySetName = 'relatedGLEntries';
+                    SubPageLink = "Entry No." = field("Entry No.");
+                }
                 part(appliedVendorEntries; "RUT Applied Vendor Entries API")
                 {
                     Caption = 'Applied Vendor Entries';

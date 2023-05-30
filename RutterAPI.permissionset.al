@@ -1,8 +1,10 @@
-permissionset 51300 "RUT Rutter API"
+permissionset 71692575 "RTR Rutter API"
 {
+    Caption = 'Rutter API';
+    Access = Public;
     Assignable = true;
-    Permissions = page "RUT Applied Vendor Entries API" = X,
-        page "RUT Vendor Ledger Entries API" = X,
-        codeunit "RUT Rutter Management" = X,
-        page "RUT Related G/L Entries API" = X;
+    Permissions = page "RTR Applied Vendor Entries API" = X,
+        page "RTR Vendor Ledger Entries API" = X,
+        codeunit "RTR Rutter Management" = X,
+        page "RTR Related G/L Entries API" = X;
 }

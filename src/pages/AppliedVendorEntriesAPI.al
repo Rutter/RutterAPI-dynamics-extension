@@ -1,4 +1,8 @@
-page 51371 "RUT Applied Vendor Entries API"
+#if Test
+page 50101 "RTR Applied Vendor Entries API"
+#else
+page 71692576 "RTR Applied Vendor Entries API"
+#endif
 {
     APIVersion = 'v2.0';
     EntityCaption = 'Applied Vendor Entry';
@@ -50,7 +54,7 @@ page 51371 "RUT Applied Vendor Entries API"
                 {
                     Caption = 'Document Type';
                 }
-                field(vendorId; Rec."RUT Vendor Id")
+                field(vendorId; Rec."RTR Vendor Id")
                 {
                     Caption = 'Vendor Id';
                 }
@@ -103,7 +107,7 @@ page 51371 "RUT Applied Vendor Entries API"
                 {
                     Caption = 'Currency Code';
                 }
-                field(currencyId; Rec."RUT Currency Id")
+                field(currencyId; Rec."RTR Currency Id")
                 {
                     Caption = 'Currency Id';
                 }
@@ -111,7 +115,7 @@ page 51371 "RUT Applied Vendor Entries API"
                 {
                     Caption = 'Account Id';
                 }
-                field(journalId; Rec."RUT Journal Id")
+                field(journalId; Rec."RTR Journal Id")
                 {
                     Caption = 'Journal Id';
                 }

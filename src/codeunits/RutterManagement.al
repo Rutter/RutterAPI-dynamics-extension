@@ -1,4 +1,8 @@
-codeunit 51370 "RUT Rutter Management"
+#if Test
+codeunit 50100 "RTR Rutter Management"
+#else
+codeunit 71692575 "RTR Rutter Management"
+#endif
 {
     trigger OnRun()
     begin
@@ -8,6 +12,6 @@ codeunit 51370 "RUT Rutter Management"
     [EventSubscriber(ObjectType::Table, Database::"Vendor Ledger Entry", 'OnAfterCopyVendLedgerEntryFromGenJnlLine', '', false, false)]
     local procedure VendLedgerEntryOnAfterCopyVendLedgerEntryFromGenJnlLine(var VendorLedgerEntry: Record "Vendor Ledger Entry"; GenJournalLine: Record "Gen. Journal Line")
     begin
-        VendorLedgerEntry."RUT Journal Id" := GenJournalLine.SystemId;
+        VendorLedgerEntry."RTR Journal Id" := GenJournalLine.SystemId;
     end;
 }

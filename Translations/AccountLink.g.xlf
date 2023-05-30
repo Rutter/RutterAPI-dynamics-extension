@@ -1,0 +1,329 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en-US" target-language="en-US" original="AccountLink">
+    <body>
+      <group id="body">
+        <trans-unit id="Page 64362673 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Applied Vendor Entry</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Applied Vendor Entries</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1406037800 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control accountId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1121446808 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control amount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 778058367 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Closed by Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control closedByAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1968678245 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Closed by Currency Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control closedByCurrencyCode - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2032829267 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Credit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control creditAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1808640270 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Currency Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control currencyCode - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 416025006 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Currency Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control currencyId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 4095993742 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Debit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control debitAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 4232699882 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Description</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control description - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1150262424 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control documentNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 305869689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document Type</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control documentType - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2190624577 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control entryNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 138905291 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>External Document No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control externalDocumentNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2410987416 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Journal Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control journalId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2245436958 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Last Modified Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control lastModifiedDateTime - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 4259830144 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Open</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control Open - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 3456634807 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Original Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control originalAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 1260828904 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Posting Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control postingDate - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2641327068 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Remaining Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control remainingAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 149332515 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control vendorId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 64362673 - Control 712552689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control vendorNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Related G/L Entry</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Related G/L Entries</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 1406037800 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control accountId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 3033425374 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control accountNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 2032829267 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Credit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control creditAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 4095993742 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Debit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control debitAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 4232699882 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Description</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control description - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 1150262424 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control documentNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 305869689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document Type</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control documentType - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 2190624577 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control entryNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2789682023 - Control 1260828904 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Posting Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control postingDate - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor Ledger Entry</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor Ledger Entries</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 1406037800 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control accountId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 3861831309 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Applied Vendor Entries</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control appliedVendorEntries - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2032829267 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Credit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control creditAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 1808640270 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Currency Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control currencyCode - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 416025006 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Currency Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control currencyId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 4095993742 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Debit Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control debitAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 4232699882 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Description</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control description - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 1150262424 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control documentNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 305869689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Document Type</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control documentType - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2190624577 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control entryNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 138905291 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>External Document No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control externalDocumentNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2410987416 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Journal Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control journalId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2245436958 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Last Modified Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control lastModifiedDateTime - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 4259830144 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Open</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control Open - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 3528533692 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Payment Method Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control paymentMethodCode - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 1260828904 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Posting Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control postingDate - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2106546234 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Related G/L Entries</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control relatedGLEntries - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 2641327068 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Remaining Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control remainingAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 149332515 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control vendorId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2962788393 - Control 712552689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control vendorNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 3097651542 - Control 2934167690 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 3650141986">
+          <source>Currency Factor API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension RTR Gen. Journal Line Entity - Control RTRCurrencyFactorAPI - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1463782731 - Field 3151848618 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 406314583">
+          <source>Currency Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension RTR Vendor Ledger Entry - Field RTR Currency Id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1463782731 - Field 1609750604 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 406314583">
+          <source>Journal Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension RTR Vendor Ledger Entry - Field RTR Journal Id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1463782731 - Field 226673479 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 406314583">
+          <source>Vendor Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension RTR Vendor Ledger Entry - Field RTR Vendor Id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PermissionSet 1028297616 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Rutter API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PermissionSet RTR Rutter API - Property Caption</note>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

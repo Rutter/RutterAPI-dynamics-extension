@@ -1,5 +1,9 @@
 // https://api.businesscentral.dynamics.com/v2.0/tenantId/production/api/Rutter/RutterAPI/v2.0/companies(companyId)/vendorLedgerEntries?$expand=appliedVendorEntries
-page 51370 "RUT Vendor Ledger Entries API"
+#if Test
+page 50100 "RTR Vendor Ledger Entries API"
+#else
+page 71692575 "RTR Vendor Ledger Entries API"
+#endif
 {
     APIVersion = 'v2.0';
     EntityCaption = 'Vendor Ledger Entry';
@@ -54,7 +58,7 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Payment Method Code';
                 }
-                field(vendorId; Rec."RUT Vendor Id")
+                field(vendorId; Rec."RTR Vendor Id")
                 {
                     Caption = 'Vendor Id';
                 }
@@ -82,7 +86,7 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Currency Code';
                 }
-                field(currencyId; Rec."RUT Currency Id")
+                field(currencyId; Rec."RTR Currency Id")
                 {
                     Caption = 'Currency Id';
                 }
@@ -90,7 +94,7 @@ page 51370 "RUT Vendor Ledger Entries API"
                 {
                     Caption = 'Account Id';
                 }
-                field(journalId; Rec."RUT Journal Id")
+                field(journalId; Rec."RTR Journal Id")
                 {
                     Caption = 'Journal Id';
                 }
@@ -103,14 +107,14 @@ page 51370 "RUT Vendor Ledger Entries API"
                     Caption = 'Remaining Amount';
                     ApplicationArea = All;
                 }
-                part(relatedGLEntries; "RUT Related G/L Entries API")
+                part(relatedGLEntries; "RTR Related G/L Entries API")
                 {
                     Caption = 'Related G/L Entries';
                     EntityName = 'relatedGLEntry';
                     EntitySetName = 'relatedGLEntries';
                     SubPageLink = "Entry No." = field("Entry No.");
                 }
-                part(appliedVendorEntries; "RUT Applied Vendor Entries API")
+                part(appliedVendorEntries; "RTR Applied Vendor Entries API")
                 {
                     Caption = 'Applied Vendor Entries';
                     EntityName = 'appliedVendorEntry';

@@ -1,5 +1,5 @@
-#if Test
-tableextension 50100 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
+#if PTE
+tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
 #else
 tableextension 71692575 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
 #endif

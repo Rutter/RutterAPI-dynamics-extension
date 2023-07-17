@@ -1,5 +1,5 @@
-#if Test
-page 50102 "RTR Related G/L Entries API"
+#if PTE
+page 71693 "RTR Related G/L Entries API"
 #else
 page 71692577 "RTR Related G/L Entries API"
 #endif

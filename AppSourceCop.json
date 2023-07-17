@@ -1,4 +1,4 @@
 {
     "mandatoryPrefix": "RTR",
-    "supportedCountries": ["US"]
+    "supportedCountries": ["US","GB"]
 }

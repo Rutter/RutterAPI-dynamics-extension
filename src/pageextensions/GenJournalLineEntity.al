@@ -1,5 +1,5 @@
-#if Test
-pageextension 50100 "RTR Gen. Journal Line Entity" extends "Gen. Journal Line Entity"
+#if PTE
+pageextension 71692 "RTR Gen. Journal Line Entity" extends "Gen. Journal Line Entity"
 #else
 pageextension 71692575 "RTR Gen. Journal Line Entity" extends "Gen. Journal Line Entity"
 #endif

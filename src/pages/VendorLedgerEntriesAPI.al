@@ -1,6 +1,6 @@
 // https://api.businesscentral.dynamics.com/v2.0/tenantId/production/api/Rutter/RutterAPI/v2.0/companies(companyId)/vendorLedgerEntries?$expand=appliedVendorEntries
-#if Test
-page 50100 "RTR Vendor Ledger Entries API"
+#if PTE
+page 71694 "RTR Vendor Ledger Entries API"
 #else
 page 71692575 "RTR Vendor Ledger Entries API"
 #endif

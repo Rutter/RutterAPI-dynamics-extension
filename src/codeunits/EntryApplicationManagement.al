@@ -1,6 +1,6 @@
 
-#if Test
-codeunit 50101 "RTR Entry Application Mgt"
+#if PTE
+codeunit 71692 "RTR Entry Application Mgt"
 #else
 codeunit 71692576 "RTR Entry Application Mgt"
 #endif

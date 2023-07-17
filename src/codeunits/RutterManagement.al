@@ -1,5 +1,5 @@
-#if Test
-codeunit 50100 "RTR Rutter Management"
+#if PTE
+codeunit 71693 "RTR Rutter Management"
 #else
 codeunit 71692575 "RTR Rutter Management"
 #endif

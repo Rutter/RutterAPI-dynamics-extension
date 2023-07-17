@@ -126,7 +126,7 @@ page 71692576 "RTR Applied Vendor Entries API"
     trigger OnFindRecord(Which: Text): Boolean
     var
         VendLedgEntry: Record "Vendor Ledger Entry";
-        EntryApplicationMgt: Codeunit "Entry Application Management";
+        EntryApplicationMgt: Codeunit "RTR Entry Application Mgt";
     begin
         VendLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
         VendLedgEntry.FindFirst();

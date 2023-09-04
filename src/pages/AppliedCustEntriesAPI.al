@@ -1,23 +1,23 @@
 #if PTE
-page 71696 "RTR Applied Vendor Entries API"
+page 71699 "RTR Applied Cust. Entries API"
 #else
-page 71692576 "RTR Applied Vendor Entries API"
+page 71692579 "RTR Applied Cust. Entries API"
 #endif
 {
     APIVersion = 'v2.0';
-    EntityCaption = 'Applied Vendor Entry';
-    EntitySetCaption = 'Applied Vendor Entries';
+    EntityCaption = 'Applied Customer Entry';
+    EntitySetCaption = 'Applied Customer Entries';
     DelayedInsert = true;
     DeleteAllowed = false;
     Editable = false;
-    EntityName = 'appliedVendorEntry';
-    EntitySetName = 'appliedVendorEntries';
+    EntityName = 'appliedCustomerEntry';
+    EntitySetName = 'appliedCustomerEntries';
     InsertAllowed = false;
     ModifyAllowed = false;
     APIPublisher = 'Rutter';
     APIGroup = 'RutterAPI';
     PageType = API;
-    SourceTable = "Vendor Ledger Entry";
+    SourceTable = "Cust. Ledger Entry";
     SourceTableTemporary = true;
     Extensible = false;
     ODataKeyFields = SystemId;
@@ -54,13 +54,13 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Document Type';
                 }
-                field(vendorId; Rec."RTR Vendor Id")
+                field(customerId; Rec."RTR Customer Id")
                 {
-                    Caption = 'Vendor Id';
+                    Caption = 'Customer Id';
                 }
-                field(vendorNumber; Rec."Vendor No.")
+                field(customerNumber; Rec."Customer No.")
                 {
-                    Caption = 'Vendor No.';
+                    Caption = 'Customer No.';
                 }
                 field(description; Rec.Description)
                 {
@@ -125,13 +125,13 @@ page 71692576 "RTR Applied Vendor Entries API"
 
     trigger OnFindRecord(Which: Text): Boolean
     var
-        VendLedgEntry: Record "Vendor Ledger Entry";
+        CustLedgEntry: Record "Cust. Ledger Entry";
         EntryApplicationMgt: Codeunit "RTR Entry Application Mgt";
     begin
-        VendLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
-        VendLedgEntry.FindFirst();
+        CustLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
+        CustLedgEntry.FindFirst();
 
-        EntryApplicationMgt.GetAppliedVendEntries(Rec, VendLedgEntry, false);
+        EntryApplicationMgt.GetAppliedCustEntries(Rec, CustLedgEntry, false);
 
         exit(Rec.FindFirst());
     end;

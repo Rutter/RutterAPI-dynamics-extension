@@ -1,24 +1,24 @@
+// https://api.businesscentral.dynamics.com/v2.0/tenantId/production/api/Rutter/RutterAPI/v2.0/companies(companyId)/vendorLedgerEntries?$expand=appliedVendorEntries
 #if PTE
-page 71696 "RTR Applied Vendor Entries API"
+page 71698 "RTR Cust. Ledger Entries API"
 #else
-page 71692576 "RTR Applied Vendor Entries API"
+page 71692578 "RTR Cust. Ledger Entries API"
 #endif
 {
     APIVersion = 'v2.0';
-    EntityCaption = 'Applied Vendor Entry';
-    EntitySetCaption = 'Applied Vendor Entries';
+    EntityCaption = 'Customer Ledger Entry';
+    EntitySetCaption = 'Customer Ledger Entries';
     DelayedInsert = true;
     DeleteAllowed = false;
     Editable = false;
-    EntityName = 'appliedVendorEntry';
-    EntitySetName = 'appliedVendorEntries';
+    EntityName = 'customerLedgerEntry';
+    EntitySetName = 'customerLedgerEntries';
     InsertAllowed = false;
     ModifyAllowed = false;
     APIPublisher = 'Rutter';
     APIGroup = 'RutterAPI';
     PageType = API;
-    SourceTable = "Vendor Ledger Entry";
-    SourceTableTemporary = true;
+    SourceTable = "Cust. Ledger Entry";
     Extensible = false;
     ODataKeyFields = SystemId;
 
@@ -46,33 +46,29 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Document No.';
                 }
-                field(externalDocumentNumber; Rec."External Document No.")
-                {
-                    Caption = 'External Document No.';
-                }
                 field(documentType; Rec."Document Type")
                 {
                     Caption = 'Document Type';
                 }
-                field(vendorId; Rec."RTR Vendor Id")
+                field(externalDocumentNumber; Rec."External Document No.")
                 {
-                    Caption = 'Vendor Id';
+                    Caption = 'External Document No.';
                 }
-                field(vendorNumber; Rec."Vendor No.")
+                field(paymentMethodCode; Rec."Payment Method Code")
                 {
-                    Caption = 'Vendor No.';
+                    Caption = 'Payment Method Code';
+                }
+                field(customerId; Rec."RTR Customer Id")
+                {
+                    Caption = 'Customer Id';
+                }
+                field(customerNumber; Rec."Customer No.")
+                {
+                    Caption = 'Customer No.';
                 }
                 field(description; Rec.Description)
                 {
                     Caption = 'Description';
-                }
-                field(amount; Rec.Amount)
-                {
-                    Caption = 'Amount';
-                }
-                field(originalAmount; Rec."Original Amount")
-                {
-                    Caption = 'Original Amount';
                 }
                 field(debitAmount; Rec."Debit Amount")
                 {
@@ -82,26 +78,9 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Credit Amount';
                 }
-                field(closedByAmount; Rec."Closed by Amount")
-                {
-                    Caption = 'Closed by Amount';
-                }
-                field(closedByCurrencyCode; Rec."Closed by Currency Code")
-                {
-                    Caption = 'Closed by Currency Code';
-                }
                 field(lastModifiedDateTime; Rec.SystemModifiedAt)
                 {
                     Caption = 'Last Modified Date';
-                }
-                field(Open; Rec.Open)
-                {
-                    Caption = 'Open';
-                }
-                field(remainingAmount; Rec."Remaining Amount")
-                {
-                    Caption = 'Remaining Amount';
-                    ApplicationArea = All;
                 }
                 field(currencyCode; Rec."Currency Code")
                 {
@@ -119,22 +98,32 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Journal Id';
                 }
+                field(Open; Rec.Open)
+                {
+                    Caption = 'Open';
+                }
+                field(remainingAmount; Rec."Remaining Amount")
+                {
+                    Caption = 'Remaining Amount';
+                    ApplicationArea = All;
+                }
+                part(relatedGLEntries; "RTR Related G/L Entries API")
+                {
+                    Caption = 'Related G/L Entries';
+                    EntityName = 'relatedGLEntry';
+                    EntitySetName = 'relatedGLEntries';
+                    SubPageLink = "Entry No." = field("Entry No.");
+                }
+                part(appliedCustomerEntries; "RTR Applied Cust. Entries API")
+                {
+                    Caption = 'Applied Customer Entries';
+                    EntityName = 'appliedCustomerEntry';
+                    EntitySetName = 'appliedCustomerEntries';
+                    SubPageLink = "Entry No." = field("Entry No.");
+                }
             }
         }
     }
-
-    trigger OnFindRecord(Which: Text): Boolean
-    var
-        VendLedgEntry: Record "Vendor Ledger Entry";
-        EntryApplicationMgt: Codeunit "RTR Entry Application Mgt";
-    begin
-        VendLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
-        VendLedgEntry.FindFirst();
-
-        EntryApplicationMgt.GetAppliedVendEntries(Rec, VendLedgEntry, false);
-
-        exit(Rec.FindFirst());
-    end;
 
     trigger OnAfterGetRecord()
     var

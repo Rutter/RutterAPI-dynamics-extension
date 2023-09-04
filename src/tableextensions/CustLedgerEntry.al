@@ -1,5 +1,5 @@
 #if PTE
-tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
+tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
 {
     fields
     {
@@ -9,10 +9,10 @@ tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
             Editable = false;
             DataClassification = CustomerContent;
         }
-        field(92576; "RTR Vendor Id"; Guid)
+        field(92576; "RTR Customer Id"; Guid)
         {
-            CalcFormula = Lookup(Vendor.SystemId WHERE("No." = FIELD("Vendor No.")));
-            Caption = 'Vendor Id';
+            CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
+            Caption = 'Customer Id';
             FieldClass = FlowField;
             TableRelation = Vendor.SystemId;
             Editable = false;
@@ -28,7 +28,7 @@ tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
     }
 }
 #else
-tableextension 71692575 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
+tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
 {
     fields
     {
@@ -38,10 +38,10 @@ tableextension 71692575 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
             Editable = false;
             DataClassification = CustomerContent;
         }
-        field(71692576; "RTR Vendor Id"; Guid)
+        field(71692576; "RTR Customer Id"; Guid)
         {
-            CalcFormula = Lookup(Vendor.SystemId WHERE("No." = FIELD("Vendor No.")));
-            Caption = 'Vendor Id';
+            CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
+            Caption = 'Customer Id';
             FieldClass = FlowField;
             TableRelation = Vendor.SystemId;
             Editable = false;

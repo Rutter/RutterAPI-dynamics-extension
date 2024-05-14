@@ -1,5 +1,5 @@
 {
-  "id": "53e5d980-b185-42a1-a5a1-ad9cd5712300",
+  "id": "53e5d980-b185-42a1-a5a1-ad9cd5712307",
   "name": "AccountLink",
   "publisher": "Rutter",
   "version": "22.2.0.0",
@@ -17,8 +17,8 @@
   "application": "21.0.0.0",
   "idRanges": [
     {
-      "from": 71692,
-      "to": 71699
+      "from": 71692575,
+      "to": 71693574
     }
   ],
   "resourceExposurePolicy": {
@@ -28,7 +28,6 @@
   },
   "runtime": "9.0",
   "supportedLocales": ["en-US","en-GB"],
-  "preprocessorSymbols": ["PTE"],
   "features": [
     "NoImplicitWith","TranslationFile"
   ]

@@ -243,6 +243,51 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control vendorNumber - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 316449660 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Bank Account</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Bank Accounts</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 1406037800 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control accountId - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 1158613746 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account Name</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control accountName - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 3033425374 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Account No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control accountNumber - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 1169761380 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Bank Acc. Posting Group</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control bankAccPostingGroup - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 460507951 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Display Name</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control displayName - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 316449660 - Control 2757394829 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Bank Accounts API - Control number - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 1877378184 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Customer Ledger Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

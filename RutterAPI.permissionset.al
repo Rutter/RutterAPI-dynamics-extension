@@ -1,4 +1,4 @@
-#if PTE 
+#if PTE
 permissionset 71692 "RTR Rutter API"
 {
     Caption = 'Rutter API';
@@ -10,7 +10,8 @@ permissionset 71692 "RTR Rutter API"
         page "RTR Related G/L Entries API" = X,
         codeunit "RTR Entry Application Mgt" = X,
         page "RTR Applied Cust. Entries API" = X,
-        page "RTR Cust. Ledger Entries API" = X;
+        page "RTR Cust. Ledger Entries API" = X,
+        page "RTR Bank Accounts API" = X;
 }
 #else
 permissionset 71692575 "RTR Rutter API"
@@ -24,6 +25,7 @@ permissionset 71692575 "RTR Rutter API"
         page "RTR Related G/L Entries API" = X,
         codeunit "RTR Entry Application Mgt" = X,
         page "RTR Applied Cust. Entries API" = X,
-        page "RTR Cust. Ledger Entries API" = X;
+        page "RTR Cust. Ledger Entries API" = X,
+        page "RTR Bank Accounts API" = X;
 }
 #endif

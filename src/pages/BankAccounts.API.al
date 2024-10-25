@@ -62,7 +62,7 @@ page 71692580 "RTR Bank Accounts API"
     begin
         Clear(GLAccount);
         if BankAccPostingGroup.Get(Rec."Bank Acc. Posting Group") then
-            if GLAccount.Get(BankAccPostingGroup.Code) then;
+            if GLAccount.Get(BankAccPostingGroup."G/L Account No.") then;
     end;
 
     var

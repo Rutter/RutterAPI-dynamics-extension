@@ -2,7 +2,7 @@
   "id": "53e5d980-b185-42a1-a5a1-ad9cd5712307",
   "name": "AccountLink",
   "publisher": "Rutter",
-  "version": "22.2.0.0",
+  "version": "25.0.0.0",
   "brief": "Connects Business Central Data with Rutter API",
   "description": "Connects Business Central Data with Rutter API",
   "privacyStatement": "http://rutterapi.com",

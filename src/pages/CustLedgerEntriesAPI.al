@@ -107,6 +107,11 @@ page 71692578 "RTR Cust. Ledger Entries API"
                     Caption = 'Remaining Amount';
                     ApplicationArea = All;
                 }
+                field(remainingAmountLCY; Rec."Remaining Amt. (LCY)")
+                {
+                    Caption = 'Remaining Amount (LCY)';
+                    ApplicationArea = All;
+                }
                 part(relatedGLEntries; "RTR Related G/L Entries API")
                 {
                     Caption = 'Related G/L Entries';

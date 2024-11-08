@@ -70,9 +70,17 @@ page 71692579 "RTR Applied Cust. Entries API"
                 {
                     Caption = 'Amount';
                 }
+                field(amountLCY; Rec."Amount (LCY)")
+                {
+                    Caption = 'Amount (LCY)';
+                }
                 field(originalAmount; Rec."Original Amount")
                 {
                     Caption = 'Original Amount';
+                }
+                field(originalAmountLCY; Rec."Original Amt. (LCY)")
+                {
+                    Caption = 'Original Amount (LCY)';
                 }
                 field(debitAmount; Rec."Debit Amount")
                 {
@@ -97,6 +105,21 @@ page 71692579 "RTR Applied Cust. Entries API"
                 field(Open; Rec.Open)
                 {
                     Caption = 'Open';
+                }
+                field(appliedAmount; TempCustLedgEntryFCY."Amount to Apply")
+                {
+                    Caption = 'Applied Amount';
+                    ApplicationArea = All;
+                }
+                field(appliedAmountLCY; Rec."Amount to Apply")
+                {
+                    Caption = 'Applied Amount (LCY)';
+                    ApplicationArea = All;
+                }
+                field(remainingAmountLCY; Rec."Remaining Amt. (LCY)")
+                {
+                    Caption = 'Remaining Amount (LCY)';
+                    ApplicationArea = All;
                 }
                 field(remainingAmount; Rec."Remaining Amount")
                 {
@@ -131,7 +154,8 @@ page 71692579 "RTR Applied Cust. Entries API"
         CustLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
         CustLedgEntry.FindFirst();
 
-        EntryApplicationMgt.GetAppliedCustEntries(Rec, CustLedgEntry, false);
+        EntryApplicationMgt.GetAppliedCustEntries(Rec, CustLedgEntry, true);
+        EntryApplicationMgt.GetAppliedCustEntries(TempCustLedgEntryFCY, CustLedgEntry, false);
 
         exit(Rec.FindFirst());
     end;
@@ -141,12 +165,17 @@ page 71692579 "RTR Applied Cust. Entries API"
         GLEntry: Record "G/L Entry";
     begin
         Clear(AccountId);
+
         if GLEntry.Get(Rec."Entry No.") then begin
             GLEntry.CalcFields("Account Id");
             AccountId := GLEntry."Account Id";
-        end
+        end;
+
+        if not TempCustLedgEntryFCY.Get(Rec."Entry No.") then
+            Clear(TempCustLedgEntryFCY);
     end;
 
     var
+        TempCustLedgEntryFCY: Record "Cust. Ledger Entry" temporary;
         AccountId: Guid;
 }

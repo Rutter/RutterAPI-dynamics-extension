@@ -463,6 +463,41 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control postingDate - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 322599471 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Area</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Areas</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Control 3004954119 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Control 1190540169 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Country/Region</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Country_Region - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Control 3461834954 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Description</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Description - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Control 1872876020 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Round Tax</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Round_Tax - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 322599471 - Control 4024556294 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Use External Tax Engine</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Use_External_Tax_Engine - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2962788393 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Vendor Ledger Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

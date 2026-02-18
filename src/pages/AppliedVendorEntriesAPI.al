@@ -70,17 +70,9 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Amount';
                 }
-                field(amountLCY; Rec."Amount (LCY)")
-                {
-                    Caption = 'Amount (LCY)';
-                }
                 field(originalAmount; Rec."Original Amount")
                 {
                     Caption = 'Original Amount';
-                }
-                field(originalAmountLCY; Rec."Original Amt. (LCY)")
-                {
-                    Caption = 'Original Amount (LCY)';
                 }
                 field(debitAmount; Rec."Debit Amount")
                 {
@@ -105,21 +97,6 @@ page 71692576 "RTR Applied Vendor Entries API"
                 field(Open; Rec.Open)
                 {
                     Caption = 'Open';
-                }
-                field(appliedAmount; TempVendLedgEntryFCY."Amount to Apply")
-                {
-                    Caption = 'Applied Amount';
-                    ApplicationArea = All;
-                }
-                field(appliedAmountLCY; Rec."Amount to Apply")
-                {
-                    Caption = 'Applied Amount (LCY)';
-                    ApplicationArea = All;
-                }
-                field(remainingAmountLCY; Rec."Remaining Amt. (LCY)")
-                {
-                    Caption = 'Remaining Amount (LCY)';
-                    ApplicationArea = All;
                 }
                 field(remainingAmount; Rec."Remaining Amount")
                 {
@@ -154,8 +131,7 @@ page 71692576 "RTR Applied Vendor Entries API"
         VendLedgEntry.SetFilter("Entry No.", Rec.GetFilter("Entry No."));
         VendLedgEntry.FindFirst();
 
-        EntryApplicationMgt.GetAppliedVendEntries(Rec, VendLedgEntry, true);
-        EntryApplicationMgt.GetAppliedVendEntries(TempVendLedgEntryFCY, VendLedgEntry, false);
+        EntryApplicationMgt.GetAppliedVendEntries(Rec, VendLedgEntry, false);
 
         exit(Rec.FindFirst());
     end;
@@ -165,17 +141,12 @@ page 71692576 "RTR Applied Vendor Entries API"
         GLEntry: Record "G/L Entry";
     begin
         Clear(AccountId);
-
         if GLEntry.Get(Rec."Entry No.") then begin
             GLEntry.CalcFields("Account Id");
             AccountId := GLEntry."Account Id";
-        end;
-
-        if not TempVendLedgEntryFCY.Get(Rec."Entry No.") then
-            Clear(TempVendLedgEntryFCY);
+        end
     end;
 
     var
-        TempVendLedgEntryFCY: Record "Vendor Ledger Entry" temporary;
         AccountId: Guid;
 }

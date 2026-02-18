@@ -23,21 +23,6 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control amount - Property Caption</note>
         </trans-unit>
-        <trans-unit id="Page 324471584 - Control 1826362222 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control amountLCY - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 324471584 - Control 2133802707 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Applied Amount</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control appliedAmount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 324471584 - Control 3268267865 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Applied Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control appliedAmountLCY - Property Caption</note>
-        </trans-unit>
         <trans-unit id="Page 324471584 - Control 778058367 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Closed by Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -128,11 +113,6 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control originalAmount - Property Caption</note>
         </trans-unit>
-        <trans-unit id="Page 324471584 - Control 797205733 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Original Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control originalAmountLCY - Property Caption</note>
-        </trans-unit>
         <trans-unit id="Page 324471584 - Control 1260828904 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Posting Date</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -142,11 +122,6 @@
           <source>Remaining Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control remainingAmount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 324471584 - Control 3751902538 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Remaining Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Cust. Entries API - Control remainingAmountLCY - Property Caption</note>
         </trans-unit>
         <trans-unit id="Page 64362673 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Applied Vendor Entry</source>
@@ -167,21 +142,6 @@
           <source>Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control amount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 64362673 - Control 1826362222 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control amountLCY - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 64362673 - Control 2133802707 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Applied Amount</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control appliedAmount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 64362673 - Control 3268267865 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Applied Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control appliedAmountLCY - Property Caption</note>
         </trans-unit>
         <trans-unit id="Page 64362673 - Control 778058367 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Closed by Amount</source>
@@ -263,11 +223,6 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control originalAmount - Property Caption</note>
         </trans-unit>
-        <trans-unit id="Page 64362673 - Control 797205733 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Original Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control originalAmountLCY - Property Caption</note>
-        </trans-unit>
         <trans-unit id="Page 64362673 - Control 1260828904 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Posting Date</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -277,11 +232,6 @@
           <source>Remaining Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control remainingAmount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 64362673 - Control 3751902538 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Remaining Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control remainingAmountLCY - Property Caption</note>
         </trans-unit>
         <trans-unit id="Page 64362673 - Control 149332515 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Vendor Id</source>
@@ -453,11 +403,6 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control remainingAmount - Property Caption</note>
         </trans-unit>
-        <trans-unit id="Page 1877378184 - Control 3751902538 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Remaining Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control remainingAmountLCY - Property Caption</note>
-        </trans-unit>
         <trans-unit id="Page 2789682023 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Related G/L Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -622,11 +567,6 @@
           <source>Remaining Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control remainingAmount - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 2962788393 - Control 3751902538 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Remaining Amount (LCY)</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Vendor Ledger Entries API - Control remainingAmountLCY - Property Caption</note>
         </trans-unit>
         <trans-unit id="Page 2962788393 - Control 149332515 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Vendor Id</source>

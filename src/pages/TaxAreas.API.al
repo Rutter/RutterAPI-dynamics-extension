@@ -35,18 +35,7 @@ page 71692581 "RTR Tax Areas API"
                 {
                     Caption = 'Description';
                 }
-                field(Country_Region; Rec."Country/Region")
-                {
-                    Caption = 'Country/Region';
-                }
-                field(Use_External_Tax_Engine; Rec."Use External Tax Engine")
-                {
-                    Caption = 'Use External Tax Engine';
-                }
-                field(Round_Tax; Rec."Round Tax")
-                {
-                    Caption = 'Round Tax';
-                }
+
             }
         }
     }

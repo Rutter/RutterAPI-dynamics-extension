@@ -483,6 +483,51 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Areas API - Control Description - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 2724391037 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Detail</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Details</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 3151465826 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Effective Date</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Effective_Date - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 3191945965 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Expense/Capitalize</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Expense_Capitalize - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 33900806 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Above Maximum</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Above_Maximum - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 71947786 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Below Maximum</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Below_Maximum - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 4171123193 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Group Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Group_Code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 2483144631 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Jurisdiction Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Jurisdiction_Code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2724391037 - Control 330298606 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Type</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Type - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2962788393 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Vendor Ledger Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

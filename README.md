@@ -44,6 +44,8 @@ RutterAPI.permissionset.al  # Permissions
 - Search for "Extension Management"
 - **Upload Extension** → Select your `.app` file → **Install**
 
+**NOTES**: Might need to delete the marketplace downloaded version (the deployed one) to avoid errors, and also the version has to be bumped everytime the extension is successfully installed (e.g xx.x.x.1 to xx.x.x.2). Two different versions can't co-exist, so every time you upload the extension the version number has to be bumped up.
+
 ### 3. Test with Postman
 
 Get company ID:
@@ -57,6 +59,24 @@ Test your endpoint:
 GET https://api.businesscentral.dynamics.com/v2.0/<environment-name>/api/Rutter/RutterAPI/v2.0/companies(<company-id>)/<entitySetName>
 Auth: Bearer <oauth-token>
 ```
+
+### 4. Important notes
+
+Most errors should come up during development via the vscode extension or our .vscode folder content. However, some errors could only come up when deploying to Partner Center. Last time we found some, they were related to some fields only available in the Dynamics US version. There is a way to locally run the validation that Partner Center runs, with a BC docker container, but it needs to be on Windows and it looks like it's not just pulling and starting the container, it needs a license. For this reason, testing locally does have some limitations.
+
+However there is a (not totally reliable, but better than nothing) way to test these errors. Make a request to the UK company (from the dev account) and if there is an error somewhere, you'll get:
+```
+{              
+    "error": {                                                                                                                                                                       
+        "code": "Unknown",
+        "message": "You cannot sign in to the company because your license has expired or the trial period has ended. However, you can still use the demonstration company.           
+        CorrelationId:  74c3b4dd-2999-491f-970c-952a4cce3410."                                                                                                                               
+    }                 
+} 
+```
+
+Not totally reliable, we'll need a bigger sample to see if it's correct but so far we forced the error found while deploying `/taxAreas` and got this. With the deployed version, the endpoint would just return an empty array. Could be useful going forward.
+
 
 ### (Optional) Delete Sandbox When Done
 - Admin Center → Environments → Delete
@@ -88,8 +108,11 @@ OAuth tokens are tenant-scoped, so the access token you get when calling the pla
 
 ## Deploying to Production
 
-1. Test in sandbox first
-2. Not done yet, WIP
+1. Testing on Dynamics (first sandbox to be sure, then Production)
+2. Create PR and merge
+3. Sign the latest `.app` file version (until we have our code sigining certificate reach out to Leo)
+4. Upload to Microsoft Partner Center (reach out to Eric for this step)
+5. If there are no errors, it takes at least 3 days for the new version to be published
 
 ## Resources
 

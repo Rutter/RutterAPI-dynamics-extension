@@ -14,7 +14,7 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
             Caption = 'Customer Id';
             FieldClass = FlowField;
-            TableRelation = Vendor.SystemId;
+            TableRelation = Customer.SystemId;
             Editable = false;
         }
         field(71752; "RTR Currency Id"; Guid)
@@ -43,7 +43,7 @@ tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
             Caption = 'Customer Id';
             FieldClass = FlowField;
-            TableRelation = Vendor.SystemId;
+            TableRelation = Customer.SystemId;
             Editable = false;
         }
         field(71692577; "RTR Currency Id"; Guid)

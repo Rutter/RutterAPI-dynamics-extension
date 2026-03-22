@@ -3,21 +3,21 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
 {
     fields
     {
-        field(92575; "RTR Journal Id"; Guid)
+        field(71750; "RTR Journal Id"; Guid)
         {
             Caption = 'Journal Id';
             Editable = false;
             DataClassification = CustomerContent;
         }
-        field(92576; "RTR Customer Id"; Guid)
+        field(71751; "RTR Customer Id"; Guid)
         {
             CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
             Caption = 'Customer Id';
             FieldClass = FlowField;
-            TableRelation = Vendor.SystemId;
+            TableRelation = Customer.SystemId;
             Editable = false;
         }
-        field(92577; "RTR Currency Id"; Guid)
+        field(71752; "RTR Currency Id"; Guid)
         {
             CalcFormula = Lookup(Currency.SystemId WHERE(Code = FIELD("Currency Code")));
             Caption = 'Currency Id';
@@ -43,7 +43,7 @@ tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             CalcFormula = Lookup(Customer.SystemId WHERE("No." = FIELD("Customer No.")));
             Caption = 'Customer Id';
             FieldClass = FlowField;
-            TableRelation = Vendor.SystemId;
+            TableRelation = Customer.SystemId;
             Editable = false;
         }
         field(71692577; "RTR Currency Id"; Guid)

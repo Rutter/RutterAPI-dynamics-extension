@@ -106,13 +106,85 @@ Not totally reliable, we'll need a bigger sample to see if it's correct but so f
 
 OAuth tokens are tenant-scoped, so the access token you get when calling the platform setup endpoint works for sandboxes too.
 
+## AppSource vs PTE Mode
+
+This extension is published through **Microsoft AppSource** (not as a Per-Tenant Extension). This distinction is important because it affects ID ranges and compilation.
+
+### How it works
+
+The `.al` source files contain `#if PTE` / `#else` conditional branches:
+- `#if PTE` branches use small IDs (e.g., `71750`) for direct tenant installs
+- `#else` branches use large IDs (e.g., `71692575`) required by AppSource
+
+The active mode is controlled by `preprocessorSymbols` in `app.json`:
+- **AppSource mode** (current): `"preprocessorSymbols": []` — compiles the `#else` branches
+- **PTE mode**: `"preprocessorSymbols": ["PTE"]` — compiles the `#if PTE` branches
+
+### ID Ranges
+
+AppSource requires all object and field IDs to be within `1,000,000 - 75,999,999`. Our allocated range is `71,692,575 - 71,693,574`, declared in `app.json` under `idRanges`.
+
+The PTE branches use IDs in the `71,692 - 71,799` range, which is only valid for per-tenant extensions (50,000 - 99,999 range) and will **fail Partner Center validation** (error AS0084) if submitted to AppSource.
+
+### Important
+
+- **Do not** add `"PTE"` to `preprocessorSymbols` — this will break AppSource submission
+- **Do not** change `idRanges` to values outside `1,000,000 - 75,999,999`
+- When adding new objects or fields, use IDs within `71,692,575 - 71,693,574`
+
 ## Deploying to Production
 
 1. Testing on Dynamics (first sandbox to be sure, then Production)
 2. Create PR and merge
-3. Sign the latest `.app` file version (until we have our code sigining certificate reach out to Leo)
+3. Sign the latest `.app` file version (see [Signing the .app Package](#signing-the-app-package) below)
 4. Upload to Microsoft Partner Center (reach out to Eric for this step)
 5. If there are no errors, it takes at least 3 days for the new version to be published
+
+## Signing the .app Package
+
+The `.app` file must be code-signed before uploading to Microsoft Partner Center. We use [jsign](https://ebourg.github.io/jsign/) with Azure Trusted Signing.
+
+### Prerequisites
+
+- **jsign** installed (`brew install jsign`)
+- **Azure CLI** installed and logged in (`az login`)
+- Access to the `Azure Signing Certificate` subscription under `rutterapi.com`
+
+### Sign the package
+
+1. Make sure you're logged into Azure CLI:
+   ```bash
+   az login
+   ```
+
+2. Sign the `.app` file:
+   ```bash
+   jsign --storetype TRUSTEDSIGNING \
+     --keystore "https://eus.codesigning.azure.net" \
+     --storepass "$(az account get-access-token --resource https://codesigning.azure.net --query accessToken -o tsv)" \
+     --alias "RutterSigning/DynamicsCertificate" \
+     Rutter_AccountLink_22.3.0.3.app
+   ```
+   Replace the `.app` filename with the current version.
+
+3. You should see: `Adding Authenticode signature to <filename>`
+
+### Verify the signature
+
+To confirm the `.app` file was signed successfully:
+
+```bash
+jsign extract Rutter_AccountLink_22.3.0.3.app
+```
+
+If signed, you'll see: `Extracting signature to <filename>.sig`. Delete the `.sig` file afterward — it's not needed.
+
+If unsigned, jsign will return an error.
+
+### Troubleshooting
+
+- **Token errors**: Make sure you're on the correct subscription (`az account set --subscription "Azure Signing Certificate"`)
+- **Access denied**: You need the "Code Signing Certificate Profile Signer" role on the `RutterSigning` account in the `azure_signing` resource group
 
 ## Resources
 

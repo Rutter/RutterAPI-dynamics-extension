@@ -3,13 +3,13 @@ tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
 {
     fields
     {
-        field(92575; "RTR Journal Id"; Guid)
+        field(71750; "RTR Journal Id"; Guid)
         {
             Caption = 'Journal Id';
             Editable = false;
             DataClassification = CustomerContent;
         }
-        field(92576; "RTR Vendor Id"; Guid)
+        field(71751; "RTR Vendor Id"; Guid)
         {
             CalcFormula = Lookup(Vendor.SystemId WHERE("No." = FIELD("Vendor No.")));
             Caption = 'Vendor Id';
@@ -17,7 +17,7 @@ tableextension 71692 "RTR Vendor Ledger Entry" extends "Vendor Ledger Entry"
             TableRelation = Vendor.SystemId;
             Editable = false;
         }
-        field(92577; "RTR Currency Id"; Guid)
+        field(71752; "RTR Currency Id"; Guid)
         {
             CalcFormula = Lookup(Currency.SystemId WHERE(Code = FIELD("Currency Code")));
             Caption = 'Currency Id';

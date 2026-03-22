@@ -498,11 +498,6 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Effective_Date - Property Caption</note>
         </trans-unit>
-        <trans-unit id="Page 2724391037 - Control 3191945965 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Expense/Capitalize</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Expense_Capitalize - Property Caption</note>
-        </trans-unit>
         <trans-unit id="Page 2724391037 - Control 33900806 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Tax Above Maximum</source>
           <note from="Developer" annotates="general" priority="2"></note>

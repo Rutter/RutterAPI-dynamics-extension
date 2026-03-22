@@ -51,10 +51,6 @@ page 71692583 "RTR Tax Details API"
                 {
                     Caption = 'Tax Above Maximum';
                 }
-                field(Expense_Capitalize; Rec."Expense/Capitalize")
-                {
-                    Caption = 'Expense/Capitalize';
-                }
 
             }
         }

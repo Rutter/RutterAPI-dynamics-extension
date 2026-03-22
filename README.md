@@ -110,9 +110,43 @@ OAuth tokens are tenant-scoped, so the access token you get when calling the pla
 
 1. Testing on Dynamics (first sandbox to be sure, then Production)
 2. Create PR and merge
-3. Sign the latest `.app` file version (until we have our code sigining certificate reach out to Leo)
+3. Sign the latest `.app` file version (see [Signing the .app Package](#signing-the-app-package) below)
 4. Upload to Microsoft Partner Center (reach out to Eric for this step)
 5. If there are no errors, it takes at least 3 days for the new version to be published
+
+## Signing the .app Package
+
+The `.app` file must be code-signed before uploading to Microsoft Partner Center. We use [jsign](https://ebourg.github.io/jsign/) with Azure Trusted Signing.
+
+### Prerequisites
+
+- **jsign** installed (`brew install jsign`)
+- **Azure CLI** installed and logged in (`az login`)
+- Access to the `Azure Signing Certificate` subscription under `rutterapi.com`
+
+### Sign the package
+
+1. Make sure you're logged into Azure CLI:
+   ```bash
+   az login
+   ```
+
+2. Sign the `.app` file:
+   ```bash
+   jsign --storetype TRUSTEDSIGNING \
+     --keystore "https://eus.codesigning.azure.net" \
+     --storepass "$(az account get-access-token --resource https://codesigning.azure.net --query accessToken -o tsv)" \
+     --alias "RutterSigning/DynamicsCertificate" \
+     Rutter_AccountLink_22.3.0.3.app
+   ```
+   Replace the `.app` filename with the current version.
+
+3. You should see: `Adding Authenticode signature to <filename>`
+
+### Troubleshooting
+
+- **Token errors**: Make sure you're on the correct subscription (`az account set --subscription "Azure Signing Certificate"`)
+- **Access denied**: You need the "Code Signing Certificate Profile Signer" role on the `RutterSigning` account in the `azure_signing` resource group
 
 ## Resources
 

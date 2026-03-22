@@ -106,6 +106,32 @@ Not totally reliable, we'll need a bigger sample to see if it's correct but so f
 
 OAuth tokens are tenant-scoped, so the access token you get when calling the platform setup endpoint works for sandboxes too.
 
+## AppSource vs PTE Mode
+
+This extension is published through **Microsoft AppSource** (not as a Per-Tenant Extension). This distinction is important because it affects ID ranges and compilation.
+
+### How it works
+
+The `.al` source files contain `#if PTE` / `#else` conditional branches:
+- `#if PTE` branches use small IDs (e.g., `71750`) for direct tenant installs
+- `#else` branches use large IDs (e.g., `71692575`) required by AppSource
+
+The active mode is controlled by `preprocessorSymbols` in `app.json`:
+- **AppSource mode** (current): `"preprocessorSymbols": []` — compiles the `#else` branches
+- **PTE mode**: `"preprocessorSymbols": ["PTE"]` — compiles the `#if PTE` branches
+
+### ID Ranges
+
+AppSource requires all object and field IDs to be within `1,000,000 - 75,999,999`. Our allocated range is `71,692,575 - 71,693,574`, declared in `app.json` under `idRanges`.
+
+The PTE branches use IDs in the `71,692 - 71,799` range, which is only valid for per-tenant extensions (50,000 - 99,999 range) and will **fail Partner Center validation** (error AS0084) if submitted to AppSource.
+
+### Important
+
+- **Do not** add `"PTE"` to `preprocessorSymbols` — this will break AppSource submission
+- **Do not** change `idRanges` to values outside `1,000,000 - 75,999,999`
+- When adding new objects or fields, use IDs within `71,692,575 - 71,693,574`
+
 ## Deploying to Production
 
 1. Testing on Dynamics (first sandbox to be sure, then Production)
@@ -142,6 +168,18 @@ The `.app` file must be code-signed before uploading to Microsoft Partner Center
    Replace the `.app` filename with the current version.
 
 3. You should see: `Adding Authenticode signature to <filename>`
+
+### Verify the signature
+
+To confirm the `.app` file was signed successfully:
+
+```bash
+jsign extract Rutter_AccountLink_22.3.0.3.app
+```
+
+If signed, you'll see: `Extracting signature to <filename>.sig`. Delete the `.sig` file afterward — it's not needed.
+
+If unsigned, jsign will return an error.
 
 ### Troubleshooting
 

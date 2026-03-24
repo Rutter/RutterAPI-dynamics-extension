@@ -51,6 +51,10 @@ page 71692583 "RTR Tax Details API"
                 {
                     Caption = 'Tax Above Maximum';
                 }
+                field(Maximum_Amount_Qty; Rec."Maximum Amount/Qty.")
+                {
+                    Caption = 'Maximum Amount/Qty';
+                }
 
             }
         }

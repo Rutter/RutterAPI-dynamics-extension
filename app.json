@@ -27,7 +27,7 @@
     "includeSourceInSymbolFile": false
   },
   "runtime": "9.0",
-  "supportedLocales": ["en-US","en-GB"],
+  "supportedLocales": ["en-US","en-GB","en-CA"],
   "preprocessorSymbols": ["PTE"],
   "features": [
     "NoImplicitWith","TranslationFile"

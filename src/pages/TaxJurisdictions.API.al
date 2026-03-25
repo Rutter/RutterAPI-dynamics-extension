@@ -47,10 +47,8 @@ page 71692584 "RTR Tax Jurisdictions API"
                 {
                     Caption = 'Report-to Jurisdiction';
                 }
-                field(Country_Region; Rec."Country/Region")
-                {
-                    Caption = 'Country/Region';
-                }
+                // "Country/Region" field is only available in US/CA localizations
+                // and causes AL0132 in other country/region validations (e.g. AD)
                 field(Adjust_for_Payment_Discount; Rec."Adjust for Payment Discount")
                 {
                     Caption = 'Adjust for Payment Discount';

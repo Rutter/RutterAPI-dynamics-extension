@@ -463,6 +463,31 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Related G/L Entries API - Control postingDate - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 3227148565 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Area Line</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Area Lines API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 3227148565 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Area Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Area Lines API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 3227148565 - Control 1232271436 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Calculation Order</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Area Lines API - Control Calculation_Order - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 3227148565 - Control 948759991 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Area</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Area Lines API - Control Tax_Area - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 3227148565 - Control 2483144631 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Jurisdiction Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Area Lines API - Control Tax_Jurisdiction_Code - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 322599471 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Tax Area</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -552,11 +577,6 @@
           <source>Code</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Jurisdictions API - Control Code - Property Caption</note>
-        </trans-unit>
-        <trans-unit id="Page 1800172393 - Control 1190540169 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
-          <source>Country/Region</source>
-          <note from="Developer" annotates="general" priority="2"></note>
-          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Jurisdictions API - Control Country_Region - Property Caption</note>
         </trans-unit>
         <trans-unit id="Page 1800172393 - Control 3461834954 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Description</source>

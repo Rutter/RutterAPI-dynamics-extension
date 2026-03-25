@@ -13,7 +13,9 @@ permissionset 71692 "RTR Rutter API"
         page "RTR Cust. Ledger Entries API" = X,
         page "RTR Bank Accounts API" = X,
         page "RTR Tax Areas API" = X,
-        page "RTR Tax Details API" = X;
+        page "RTR Tax Details API" = X,
+        page "RTR Tax Jurisdictions API" = X,
+        page "RTR Tax Area Lines API" = X;
 }
 #else
 permissionset 71692575 "RTR Rutter API"
@@ -30,6 +32,8 @@ permissionset 71692575 "RTR Rutter API"
         page "RTR Cust. Ledger Entries API" = X,
         page "RTR Bank Accounts API" = X,
         page "RTR Tax Areas API" = X,
-        page "RTR Tax Details API" = X;
+        page "RTR Tax Details API" = X,
+        page "RTR Tax Jurisdictions API" = X,
+        page "RTR Tax Area Lines API" = X;
 }
 #endif

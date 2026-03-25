@@ -108,36 +108,48 @@ OAuth tokens are tenant-scoped, so the access token you get when calling the pla
 
 ## AppSource vs PTE Mode
 
-This extension is published through **Microsoft AppSource** (not as a Per-Tenant Extension). This distinction is important because it affects ID ranges and compilation.
+This extension is published through **Microsoft AppSource**. The source files support two compilation modes via `#if PTE` / `#else` conditional branches.
 
-### How it works
+### The two configs
 
-The `.al` source files contain `#if PTE` / `#else` conditional branches:
-- `#if PTE` branches use small IDs (e.g., `71750`) for direct tenant installs
-- `#else` branches use large IDs (e.g., `71692575`) required by AppSource
+| | `app.json` (PTE) | `app_AppSource.json` (AppSource) |
+|---|---|---|
+| App ID | `...300` | `...307` |
+| `preprocessorSymbols` | `["PTE"]` | `[]` |
+| `idRanges` | `71692 - 71799` | `71692575 - 71693574` |
+| Use for | Local dev & testing | Partner Center upload |
 
-The active mode is controlled by `preprocessorSymbols` in `app.json`:
-- **AppSource mode** (current): `"preprocessorSymbols": []` — compiles the `#else` branches
-- **PTE mode**: `"preprocessorSymbols": ["PTE"]` — compiles the `#if PTE` branches
+### Golden rule: `app.json` is always PTE
 
-### ID Ranges
+**`app.json` should always have PTE config in git.** Never commit it in AppSource state. This will cause errors if it happens.
 
-AppSource requires all object and field IDs to be within `1,000,000 - 75,999,999`. Our allocated range is `71,692,575 - 71,693,574`, declared in `app.json` under `idRanges`.
+### Deploying to Partner Center
 
-The PTE branches use IDs in the `71,692 - 71,799` range, which is only valid for per-tenant extensions (50,000 - 99,999 range) and will **fail Partner Center validation** (error AS0084) if submitted to AppSource.
+When ready to deploy a new version:
 
-### Important
+1. Bump the version in **`app_AppSource.json`** (not `app.json`)
+2. Temporarily copy `app_AppSource.json` over `app.json`:
+   ```bash
+   cp app_AppSource.json app.json
+   ```
+   Or just manually replace the content
 
-- **Do not** add `"PTE"` to `preprocessorSymbols` — this will break AppSource submission
-- **Do not** change `idRanges` to values outside `1,000,000 - 75,999,999`
-- When adding new objects or fields, use IDs within `71,692,575 - 71,693,574`
+3. Compile the `.app` in VS Code - (`Ctrl+Shift+P`) -> AL: Package
+4. **Immediately restore `app.json`** before doing anything else
+5. Sign and upload the `.app` (see [Signing the .app Package](#signing-the-app-package))
+
+In short, `app.json` should always be in development state, when it's ready to be deployed, package the extension with `app_AppSource.json` content, then replace it back. 
+
+### Adding new objects or fields
+
+Always use PTE IDs (`71692 - 71799`) in your `#if PTE` branch and AppSource IDs (`71692575 - 71693574`) in your `#else` branch.
 
 ## Deploying to Production
 
 1. Testing on Dynamics (first sandbox to be sure, then Production)
 2. Create PR and merge
 3. Sign the latest `.app` file version (see [Signing the .app Package](#signing-the-app-package) below)
-4. Upload to Microsoft Partner Center (reach out to Eric for this step)
+4. Upload to Microsoft Partner Center (reach out to Leo or Eric for this step)
 5. If there are no errors, it takes at least 3 days for the new version to be published
 
 ## Signing the .app Package

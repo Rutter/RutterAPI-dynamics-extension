@@ -23,6 +23,7 @@ pageextension 71692575 "RTR Gen. Journal Line Entity" extends "Gen. Journal Line
                     Rec.Validate("Currency Factor", Factor);
                 end;
             }
+
         }
     }
 

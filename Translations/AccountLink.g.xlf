@@ -403,6 +403,26 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control remainingAmount - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 667652513 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Gen. Journal Line Overrides</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 667652513 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Gen. Journal Line Overrides</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 667652513 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 667652513 - Control 2705902533 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Amount API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Control RTRVATAmountAPI - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2789682023 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Related G/L Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

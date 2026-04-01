@@ -30,9 +30,9 @@ page 71692587 "RTR Gen. Jnl. Setup API"
                     Editable = false;
                 }
                 // Enabling allowVATDifference also ensures Max. VAT Difference Allowed
-                // in GL Setup is non-zero so that overrides are not immediately blocked.
-                // We only set it if it is currently 0 (unset) to avoid overriding a
-                // value the customer has intentionally configured.
+                // in GL Setup is set to a large value so that users do not error out
+                // when Rutter sets a custom tax amount. We only set it if it is currently
+                // 0 (unset) to avoid overriding a value the customer has intentionally configured.
                 field(allowVATDifference; Rec."Allow VAT Difference")
                 {
                     Caption = 'Allow VAT Difference';

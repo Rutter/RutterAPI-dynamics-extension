@@ -17,7 +17,9 @@ permissionset 71692 "RTR Rutter API"
         page "RTR Tax Jurisdictions API" = X,
         page "RTR Tax Area Lines API" = X,
         page "RTR Gen. Jnl. Overrides API" = X,
-        page "RTR Gen. Jnl. Setup API" = X;
+        page "RTR Gen. Jnl. Setup API" = X,
+        page "RTR Purch. Line Overrides API" = X,
+        page "RTR P. Payables Setup API" = X;
 }
 #else
 permissionset 71692575 "RTR Rutter API"
@@ -38,6 +40,8 @@ permissionset 71692575 "RTR Rutter API"
         page "RTR Tax Jurisdictions API" = X,
         page "RTR Tax Area Lines API" = X,
         page "RTR Gen. Jnl. Overrides API" = X,
-        page "RTR Gen. Jnl. Setup API" = X;
+        page "RTR Gen. Jnl. Setup API" = X,
+        page "RTR Purch. Line Overrides API" = X,
+        page "RTR P. Payables Setup API" = X;
 }
 #endif

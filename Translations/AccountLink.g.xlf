@@ -433,6 +433,41 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Setup API - Control name - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 2701958104 - Control 591517519 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Allow VAT Difference</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR P. Payables Setup API - Control allowVATDifference - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2701958104 - Control 637582037 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Primary Key</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR P. Payables Setup API - Control primaryKey - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2701958104 - Control 3580217385 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Extension Version</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR P. Payables Setup API - Control RTRExtensionVersion - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2213456209 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Purchase Line Override</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Line Overrides API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2213456209 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Purchase Line Overrides</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Line Overrides API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2213456209 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Line Overrides API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2213456209 - Control 2705902533 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Amount API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Line Overrides API - Control RTRVATAmountAPI - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2789682023 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Related G/L Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

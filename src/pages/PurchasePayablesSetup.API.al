@@ -43,8 +43,6 @@ page 71692589 "RTR P. Payables Setup API"
                     Caption = 'Allow VAT Difference';
 
                     trigger OnValidate()
-                    var
-                        GLSetup: Record "General Ledger Setup";
                     begin
                         if Rec."Allow VAT Difference" then begin
                             GLSetup.Get();

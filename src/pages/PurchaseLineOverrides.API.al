@@ -75,6 +75,11 @@ page 71692588 "RTR Purch. Line Overrides API"
         }
     }
 
+    trigger OnAfterGetRecord()
+    begin
+        TaxAmt := Rec."Amount Including VAT" - Rec.Amount;
+    end;
+
     var
         TaxAmt: Decimal;
 

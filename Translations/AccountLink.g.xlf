@@ -428,6 +428,11 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Setup API - Control allowVATDifference - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 2744850113 - Control 3870445260 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Max. VAT Difference Allowed</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Setup API - Control maxVATDifferenceAllowed - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2744850113 - Control 3558812865 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Name</source>
           <note from="Developer" annotates="general" priority="2"></note>

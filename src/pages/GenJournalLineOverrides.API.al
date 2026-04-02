@@ -60,6 +60,10 @@ page 71692586 "RTR Gen. Jnl. Overrides API"
 
                         Rec."VAT Difference" := VATDiff;
                         Rec."VAT Amount" := VATAmt;
+                        // Keep VAT Base Amount consistent: Amount = VAT Base Amount + VAT Amount.
+                        // Required for VAT locales (e.g. Canada, EU) where BC enforces this
+                        // invariant at posting time. Safe for US/Sales Tax regions too.
+                        Rec."VAT Base Amount" := Rec.Amount - VATAmt;
                     end;
                 }
             }

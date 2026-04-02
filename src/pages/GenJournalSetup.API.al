@@ -50,7 +50,27 @@ page 71692587 "RTR Gen. Jnl. Setup API"
                         end;
                     end;
                 }
+                // Exposed read-only so the backend can check whether Max. VAT Difference
+                // Allowed is set before deciding whether a setup PATCH is needed.
+                // The value is always set by Rutter (to 1,000,000,000 if unset) — there
+                // is no reason to allow arbitrary external values here.
+                field(maxVATDifferenceAllowed; MaxVATDiff)
+                {
+                    Caption = 'Max. VAT Difference Allowed';
+                    Editable = false;
+                }
             }
         }
     }
+
+    trigger OnAfterGetRecord()
+    var
+        GLSetup: Record "General Ledger Setup";
+    begin
+        GLSetup.Get();
+        MaxVATDiff := GLSetup."Max. VAT Difference Allowed";
+    end;
+
+    var
+        MaxVATDiff: Decimal;
 }

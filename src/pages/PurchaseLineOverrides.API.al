@@ -97,12 +97,16 @@ page 71692588 "RTR Purch. Line Overrides API"
     //
     // Tax Difference[i] = (TotalDesiredTax / N) - (TotalBaseAmount * rate[i] / 100)
     // so that each jurisdiction ends up with an equal share of TotalDesiredTax.
+    //
+    // IMPORTANT: Table 10012 "Sales Tax Amount Difference" and some Tax Detail
+    // fields/enums only exist in NA localizations.  We use RecordRef/FieldRef
+    // with integer field IDs to avoid compile-time references to NA-only objects
+    // so the extension validates for all country/regions on Partner Center.
     local procedure WriteTaxAmountDifferences()
     var
         OtherLine: Record "Purchase Line";
         TaxAreaLine2: Record "Tax Area Line";
-        TaxDetail2: Record "Tax Detail";
-        TaxAmtDiff: Record "Sales Tax Amount Difference";
+        TaxAmtDiffRef: RecordRef;
         TotalDesiredTax: Decimal;
         TotalBaseAmount: Decimal;
         JurisdictionCount: Integer;
@@ -110,7 +114,13 @@ page 71692588 "RTR Purch. Line Overrides API"
         RemainingTax: Decimal;
         JurIdx: Integer;
         CalcTaxPerJur: Decimal;
+        TaxBelowMaximum: Decimal;
     begin
+        // Sales Tax Amount Difference (Table 10012) is NA-only.
+        // Skip entirely for non-NA localizations where the table does not exist.
+        if not TryOpenSalesTaxAmtDiffTable(TaxAmtDiffRef) then
+            exit;
+
         // Sum desired tax for the whole document: TaxAmt for this line +
         // existing (already-saved) tax for all other lines.
         TotalDesiredTax := TaxAmt;
@@ -125,10 +135,14 @@ page 71692588 "RTR Purch. Line Overrides API"
             until OtherLine.Next() = 0;
 
         // Clear existing records for this document before rewriting.
-        TaxAmtDiff.SetRange("Document Product Area", "Sales Tax Document Area"::Purchase);
-        TaxAmtDiff.SetRange("Document Type", TaxAmtDiff."Document Type"::Invoice);
-        TaxAmtDiff.SetRange("Document No.", Rec."Document No.");
-        TaxAmtDiff.DeleteAll();
+        // Field 2 = "Document Product Area", 1 = Purchase (Sales Tax Document Area enum)
+        // Field 1 = "Document Type", 2 = Invoice
+        // Field 3 = "Document No."
+        TaxAmtDiffRef.Field(2).SetRange(1);
+        TaxAmtDiffRef.Field(1).SetRange(2);
+        TaxAmtDiffRef.Field(3).SetRange(Rec."Document No.");
+        TaxAmtDiffRef.DeleteAll();
+        TaxAmtDiffRef.Close();
 
         if TotalDesiredTax = 0 then
             exit;
@@ -138,7 +152,7 @@ page 71692588 "RTR Purch. Line Overrides API"
         if not TaxAreaLine2.FindSet() then
             exit;
         repeat
-            if FindApplicableTaxDetail(TaxDetail2, TaxAreaLine2."Tax Jurisdiction Code", Rec."Tax Group Code") then
+            if FindApplicableTaxDetail(TaxBelowMaximum, TaxAreaLine2."Tax Jurisdiction Code", Rec."Tax Group Code") then
                 JurisdictionCount += 1;
         until TaxAreaLine2.Next() = 0;
 
@@ -151,52 +165,102 @@ page 71692588 "RTR Purch. Line Overrides API"
 
         TaxAreaLine2.FindSet();
         repeat
-            if FindApplicableTaxDetail(TaxDetail2, TaxAreaLine2."Tax Jurisdiction Code", Rec."Tax Group Code") then begin
+            if FindApplicableTaxDetail(TaxBelowMaximum, TaxAreaLine2."Tax Jurisdiction Code", Rec."Tax Group Code") then begin
                 JurIdx += 1;
                 // Approximate the calculated tax for this jurisdiction using the rate.
-                CalcTaxPerJur := TotalBaseAmount * TaxDetail2."Tax Below Maximum" / 100;
+                CalcTaxPerJur := TotalBaseAmount * TaxBelowMaximum / 100;
 
-                TaxAmtDiff.Init();
-                TaxAmtDiff."Document Product Area" := "Sales Tax Document Area"::Purchase;
-                TaxAmtDiff."Document Type" := TaxAmtDiff."Document Type"::Invoice;
-                TaxAmtDiff."Document No." := Rec."Document No.";
-                TaxAmtDiff."Tax Area Code" := Rec."Tax Area Code";
-                TaxAmtDiff."Tax Jurisdiction Code" := TaxAreaLine2."Tax Jurisdiction Code";
-                TaxAmtDiff."Tax %" := TaxDetail2."Tax Below Maximum";
-                TaxAmtDiff."Tax Group Code" := Rec."Tax Group Code";
-                TaxAmtDiff."Expense/Capitalize" := false;
-                // Tax Type must be "Sales and Use Tax" (0) to match TempSalesTaxAmountLine
-                // created by AddPurchLine, which never sets Positive or Tax Type explicitly.
-                TaxAmtDiff."Tax Type" := TaxAmtDiff."Tax Type"::"Sales and Use Tax";
-                TaxAmtDiff."Use Tax" := Rec."Use Tax";
-                TaxAmtDiff.Positive := false;
+                // Table 10012 field reference:
+                //   1 = Document Type (Option: Quote=0, Order=1, Invoice=2, Credit Memo=3)
+                //   2 = Document Product Area (Enum 10012: Sale=0, Purchase=1)
+                //   3 = Document No. (Code[20])
+                //   5 = Tax Area Code (Code[20])
+                //   6 = Tax Jurisdiction Code (Code[10])
+                //   7 = Tax Group Code (Code[20])
+                //   8 = Tax % (Decimal)
+                //   9 = Expense/Capitalize (Boolean)
+                //  10 = Tax Type (Option: Sales and Use Tax=0, Excise Tax=1, Sales Tax Only=2)
+                //  11 = Use Tax (Boolean)
+                //  15 = Tax Difference (Decimal)
+                //  16 = Positive (Boolean)
+                TaxAmtDiffRef.Open(10012);
+                TaxAmtDiffRef.Init();
+                TaxAmtDiffRef.Field(2).Value := 1;   // Document Product Area = Purchase
+                TaxAmtDiffRef.Field(1).Value := 2;   // Document Type = Invoice
+                TaxAmtDiffRef.Field(3).Value := Rec."Document No.";
+                TaxAmtDiffRef.Field(5).Value := Rec."Tax Area Code";
+                TaxAmtDiffRef.Field(6).Value := TaxAreaLine2."Tax Jurisdiction Code";
+                TaxAmtDiffRef.Field(8).Value := TaxBelowMaximum;
+                TaxAmtDiffRef.Field(7).Value := Rec."Tax Group Code";
+                TaxAmtDiffRef.Field(9).Value := false; // Expense/Capitalize
+                // Tax Type = "Sales and Use Tax" (0) to match TempSalesTaxAmountLine
+                // created by AddPurchLine.
+                TaxAmtDiffRef.Field(10).Value := 0;
+                TaxAmtDiffRef.Field(11).Value := Rec."Use Tax";
+                TaxAmtDiffRef.Field(16).Value := false; // Positive
 
                 if JurIdx = JurisdictionCount then
                     // Last jurisdiction absorbs rounding remainder.
-                    TaxAmtDiff."Tax Difference" := RemainingTax - CalcTaxPerJur
+                    TaxAmtDiffRef.Field(15).Value := RemainingTax - CalcTaxPerJur
                 else begin
-                    TaxAmtDiff."Tax Difference" := DiffPerJur - CalcTaxPerJur;
+                    TaxAmtDiffRef.Field(15).Value := DiffPerJur - CalcTaxPerJur;
                     RemainingTax -= DiffPerJur;
                 end;
 
-                TaxAmtDiff.Insert();
+                TaxAmtDiffRef.Insert();
+                TaxAmtDiffRef.Close();
             end;
         until TaxAreaLine2.Next() = 0;
     end;
 
-    // Returns true (and populates TaxDetail) if there is an applicable non-expense
-    // Sales and Use Tax / Sales Tax Only detail for the given jurisdiction + group.
-    // Mirrors the filter used by SalesTaxCalculate.EndSalesTaxCalculation.
-    local procedure FindApplicableTaxDetail(var TaxDetail: Record "Tax Detail"; JurisdictionCode: Code[10]; TaxGroupCode: Code[20]): Boolean
+    // Tries to open the Sales Tax Amount Difference table (10012).
+    // Returns false in non-NA localizations where the table does not exist.
+    [TryFunction]
+    local procedure TryOpenSalesTaxAmtDiffTable(var RecRef: RecordRef)
+    begin
+        RecRef.Open(10012);
+    end;
+
+    // Returns true (and outputs TaxBelowMaximum rate) if there is an applicable
+    // non-expense Sales and Use Tax / Sales Tax Only detail for the given
+    // jurisdiction + group.  Mirrors the filter used by
+    // SalesTaxCalculate.EndSalesTaxCalculation.
+    //
+    // Uses RecordRef for NA-only fields: "Expense/Capitalize" (field 10010)
+    // and filters "Tax Type" by ordinal to avoid referencing NA-only enum values.
+    local procedure FindApplicableTaxDetail(var TaxBelowMaximum: Decimal; JurisdictionCode: Code[10]; TaxGroupCode: Code[20]): Boolean
+    var
+        TaxDetail: Record "Tax Detail";
+        TaxDetailRef: RecordRef;
+        ExpCapFieldRef: FieldRef;
     begin
         TaxDetail.Reset();
         TaxDetail.SetRange("Tax Jurisdiction Code", JurisdictionCode);
         TaxDetail.SetFilter("Tax Group Code", '%1|%2', '', TaxGroupCode);
         TaxDetail.SetFilter("Effective Date", '<=%1', WorkDate());
-        TaxDetail.SetFilter("Tax Type", '%1|%2',
-            TaxDetail."Tax Type"::"Sales and Use Tax",
-            TaxDetail."Tax Type"::"Sales Tax Only");
-        TaxDetail.SetRange("Expense/Capitalize", false);
-        exit(TaxDetail.FindLast());
+        // Filter Tax Type by ordinal: 0 = Sales and Use Tax, 2 = Sales Tax Only.
+        // Named enum values are NA-only and would fail compilation in other regions.
+        TaxDetail.SetFilter("Tax Type", '%1|%2', 0, 2);
+        // "Expense/Capitalize" (field 10010) only exists in NA localizations.
+        // Apply the filter via FieldRef to avoid a compile-time reference.
+        TaxDetailRef.GetTable(TaxDetail);
+        if TrySetBooleanFieldRange(TaxDetailRef, 10010, false) then;
+        TaxDetailRef.SetTable(TaxDetail);
+
+        if not TaxDetail.FindLast() then
+            exit(false);
+        TaxBelowMaximum := TaxDetail."Tax Below Maximum";
+        exit(true);
+    end;
+
+    // Attempts to set a boolean range filter on a RecordRef field.
+    // Silently fails if the field does not exist (non-NA localizations).
+    [TryFunction]
+    local procedure TrySetBooleanFieldRange(var RecRef: RecordRef; FieldNo: Integer; Value: Boolean)
+    var
+        FldRef: FieldRef;
+    begin
+        FldRef := RecRef.Field(FieldNo);
+        FldRef.SetRange(Value);
     end;
 }

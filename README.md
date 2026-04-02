@@ -7,6 +7,7 @@ A Business Central AL extension that exposes custom API endpoints for Rutter's i
 This extension adds custom API endpoints to Dynamics 365 Business Central that expose data not available through standard APIs or OData endpoints (which aren't enabled by default for customers).
 
 **How it works:**
+
 1. Write AL code (`.al` files) defining API pages
 2. Compile to create an `.app` package
 3. Upload the `.app` to a BC environment
@@ -30,31 +31,36 @@ RutterAPI.permissionset.al  # Permissions
 ## Testing Changes
 
 ### (Optional) Create a Sandbox
+
 - Go to [BC Admin Center](https://businesscentral.dynamics.com/)
 - **Environments** → **New** → Choose **Sandbox**
 - Select "Empty" (faster) or copy from Production
 - Wait ~5-10 minutes
 
 ### 1. Compile the Extension
+
 - In VS Code: Press `F5` or `Ctrl+Shift+P` → "AL: Publish"
 - Generates `.app` file in project directory
 
 ### 2. Upload to Test Environment
+
 - Open environment in browser
 - Search for "Extension Management"
-- **Upload Extension** → Select your `.app` file → **Install**
+- Manage → **Upload Extension** → Select your `.app` file → **Install**
 
 **NOTES**: Might need to delete the marketplace downloaded version (the deployed one) to avoid errors, and also the version has to be bumped everytime the extension is successfully installed (e.g xx.x.x.1 to xx.x.x.2). Two different versions can't co-exist, so every time you upload the extension the version number has to be bumped up.
 
 ### 3. Test with Postman
 
 Get company ID:
+
 ```
 GET https://api.businesscentral.dynamics.com/v2.0/<environment-name>/api/v2.0/companies
 Auth: Bearer <oauth-token>
 ```
 
 Test your endpoint:
+
 ```
 GET https://api.businesscentral.dynamics.com/v2.0/<environment-name>/api/Rutter/RutterAPI/v2.0/companies(<company-id>)/<entitySetName>
 Auth: Bearer <oauth-token>
@@ -65,20 +71,21 @@ Auth: Bearer <oauth-token>
 Most errors should come up during development via the vscode extension or our .vscode folder content. However, some errors could only come up when deploying to Partner Center. Last time we found some, they were related to some fields only available in the Dynamics US version. There is a way to locally run the validation that Partner Center runs, with a BC docker container, but it needs to be on Windows and it looks like it's not just pulling and starting the container, it needs a license. For this reason, testing locally does have some limitations.
 
 However there is a (not totally reliable, but better than nothing) way to test these errors. Make a request to the UK company (from the dev account) and if there is an error somewhere, you'll get:
+
 ```
-{              
-    "error": {                                                                                                                                                                       
+{
+    "error": {
         "code": "Unknown",
-        "message": "You cannot sign in to the company because your license has expired or the trial period has ended. However, you can still use the demonstration company.           
-        CorrelationId:  74c3b4dd-2999-491f-970c-952a4cce3410."                                                                                                                               
-    }                 
-} 
+        "message": "You cannot sign in to the company because your license has expired or the trial period has ended. However, you can still use the demonstration company.
+        CorrelationId:  74c3b4dd-2999-491f-970c-952a4cce3410."
+    }
+}
 ```
 
 Not totally reliable, we'll need a bigger sample to see if it's correct but so far we forced the error found while deploying `/taxAreas` and got this. With the deployed version, the endpoint would just return an empty array. Could be useful going forward.
 
-
 ### (Optional) Delete Sandbox When Done
+
 - Admin Center → Environments → Delete
 
 ## Adding New Endpoints
@@ -93,12 +100,15 @@ Not totally reliable, we'll need a bigger sample to see if it's correct but so f
 ## Common Issues
 
 **"Different .app with same version" error**
+
 - Solution: Increment version in `app.json`
 
 **"Field name appears in multiple apps" error**
+
 - Solution: Another version is installed. Uninstall it first (sandbox only!)
 
 **API returns 404**
+
 - Check extension is installed (Extension Management)
 - Verify URL format and entity name
 
@@ -112,12 +122,12 @@ This extension is published through **Microsoft AppSource**. The source files su
 
 ### The two configs
 
-| | `app.json` (PTE) | `app_AppSource.json` (AppSource) |
-|---|---|---|
-| App ID | `...300` | `...307` |
-| `preprocessorSymbols` | `["PTE"]` | `[]` |
-| `idRanges` | `71692 - 71799` | `71692575 - 71693574` |
-| Use for | Local dev & testing | Partner Center upload |
+|                       | `app.json` (PTE)    | `app_AppSource.json` (AppSource) |
+| --------------------- | ------------------- | -------------------------------- |
+| App ID                | `...300`            | `...307`                         |
+| `preprocessorSymbols` | `["PTE"]`           | `[]`                             |
+| `idRanges`            | `71692 - 71799`     | `71692575 - 71693574`            |
+| Use for               | Local dev & testing | Partner Center upload            |
 
 ### Golden rule: `app.json` is always PTE
 
@@ -129,16 +139,18 @@ When ready to deploy a new version:
 
 1. Bump the version in **`app_AppSource.json`** (not `app.json`)
 2. Temporarily copy `app_AppSource.json` over `app.json`:
+
    ```bash
    cp app_AppSource.json app.json
    ```
+
    Or just manually replace the content
 
 3. Compile the `.app` in VS Code - (`Ctrl+Shift+P`) -> AL: Package
 4. **Immediately restore `app.json`** before doing anything else
 5. Sign and upload the `.app` (see [Signing the .app Package](#signing-the-app-package))
 
-In short, `app.json` should always be in development state, when it's ready to be deployed, package the extension with `app_AppSource.json` content, then replace it back. 
+In short, `app.json` should always be in development state, when it's ready to be deployed, package the extension with `app_AppSource.json` content, then replace it back.
 
 ### Adding new objects or fields
 
@@ -165,11 +177,13 @@ The `.app` file must be code-signed before uploading to Microsoft Partner Center
 ### Sign the package
 
 1. Make sure you're logged into Azure CLI:
+
    ```bash
    az login
    ```
 
 2. Sign the `.app` file:
+
    ```bash
    jsign --storetype TRUSTEDSIGNING \
      --keystore "https://eus.codesigning.azure.net" \
@@ -177,6 +191,7 @@ The `.app` file must be code-signed before uploading to Microsoft Partner Center
      --alias "RutterSigning/DynamicsCertificate" \
      Rutter_AccountLink_22.3.0.3.app
    ```
+
    Replace the `.app` filename with the current version.
 
 3. You should see: `Adding Authenticode signature to <filename>`

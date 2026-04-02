@@ -29,9 +29,9 @@ page 71692589 "RTR P. Payables Setup API"
                     Caption = 'Primary Key';
                     Editable = false;
                 }
-                field(RTRExtensionVersion; ExtensionVersion)
+                field(maxVATDifferenceAllowed; GLSetup."Max. VAT Difference Allowed")
                 {
-                    Caption = 'Extension Version';
+                    Caption = 'Max. VAT Difference Allowed';
                     Editable = false;
                 }
                 // Enabling allowVATDifference also ensures Max. VAT Difference Allowed
@@ -61,9 +61,9 @@ page 71692589 "RTR P. Payables Setup API"
 
     trigger OnOpenPage()
     begin
-        ExtensionVersion := '22.3.0.10';
+        GLSetup.Get();
     end;
 
     var
-        ExtensionVersion: Text[20];
+        GLSetup: Record "General Ledger Setup";
 }

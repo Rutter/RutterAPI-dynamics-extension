@@ -13,6 +13,19 @@
             "breakOnError": true,
             "launchBrowser": true
         },
+         {
+            "name": "Eric@rutterapi.com usa sandbox",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "Sandbox",
+            "authentication": "AAD",
+            "tenant": "a56ff6f6-e94f-4416-a4fe-14fe14da9ad4",
+            "startupObjectId": 22,
+            "startupObjectType": "Page",
+            "breakOnError": true,
+            "launchBrowser": true
+        },
         {
             "name": "BC210",
             "request": "launch",

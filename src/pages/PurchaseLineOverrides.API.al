@@ -16,7 +16,7 @@ page 71692588 "RTR Purch. Line Overrides API"
     SourceTableView = WHERE("Document Type" = CONST(Invoice));
     ODataKeyFields = SystemId;
     InsertAllowed = false;
-    DeleteAllowed = false;
+    DeleteAllowed = true;
     ModifyAllowed = true;
     Editable = true;
     Extensible = false;
@@ -78,6 +78,15 @@ page 71692588 "RTR Purch. Line Overrides API"
     trigger OnAfterGetRecord()
     begin
         TaxAmt := Rec."Amount Including VAT" - Rec.Amount;
+    end;
+
+    // Cleanup before deletion (zeroing VAT Difference and clearing Table 10012
+    // records) is handled by the RTR Purchase Line tableextension's OnBeforeDelete
+    // trigger, which fires at the data layer immediately before the base table
+    // OnDelete dialog check.  The page trigger just needs to allow the delete.
+    trigger OnDeleteRecord(): Boolean
+    begin
+        exit(true); // Proceed with deletion.
     end;
 
     var

@@ -37,10 +37,21 @@ RutterAPI.permissionset.al  # Permissions
 - Select "Empty" (faster) or copy from Production
 - Wait ~5-10 minutes
 
-### 1. Compile the Extension
+### 1. Download Symbols & Compile
 
-- In VS Code: Press `F5` or `Ctrl+Shift+P` → "AL: Publish"
-- Generates `.app` file in project directory
+**You must use a Sandbox environment** — Production environments do not expose the dev endpoint needed for symbol download and publishing from VS Code.
+
+1. Make sure your `launch.json` has a Sandbox config with `"tenant"` set (e.g. `"tenant": "a56ff6f6-e94f-4416-a4fe-14fe14da9ad4"`). Without the tenant ID, symbol download will fail with `InternalServerError`.
+2. Select the Sandbox launch config in the VS Code status bar (bottom).
+3. `Ctrl+Shift+P` → **AL: Download Symbols** — this downloads `.app` symbol files into `.alpackages/`. You need these for the compiler to resolve BC table/page references.
+4. If it says "All reference symbols are already downloaded" but you're getting "Table X is missing" errors, delete the `.alpackages/` folder and download again. VS Code caches stale symbols and won't re-download unless the folder is missing.
+5. `Ctrl+Shift+B` (AL: Package) to compile, or `F5` / `Ctrl+F5` to compile and publish to the Sandbox.
+
+**Gotchas:**
+- The `platform` and `application` versions in `app.json` must be compatible with your Sandbox BC version. If your Sandbox is v28.x, you need `"platform": "28.0.0.0"` to compile against v28 symbols. Restore `app.json` to the committed PTE values (v21) before committing.
+- If you create a new Sandbox, it takes 5-10 minutes to provision. Symbol download will fail until it's Active (check Admin Center → Environments).
+- `rad.json` changes when you publish — don't commit it.
+- The `.alpackages/` folder is gitignored. Never commit symbol `.app` files.
 
 ### 2. Upload to Test Environment
 

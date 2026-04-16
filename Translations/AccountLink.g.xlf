@@ -803,6 +803,16 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">PageExtension RTR Gen. Journal Line Entity - Control RTRCurrencyFactorAPI - Property Caption</note>
         </trans-unit>
+        <trans-unit id="PageExtension 1232983133 - Control 4235248573 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 2583272393">
+          <source>Tax Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension RTR General Journal - Control RTRVATAmount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 1232983133 - Control 2510513300 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 2583272393">
+          <source>Tax Difference</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension RTR General Journal - Control RTRVATDifference - Property Caption</note>
+        </trans-unit>
         <trans-unit id="TableExtension 657456894 - Field 3151848618 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 2733917450">
           <source>Currency Id</source>
           <note from="Developer" annotates="general" priority="2"></note>

@@ -26,8 +26,9 @@ RutterAPI.permissionset.al  # Permissions
 
 ## Versioning
 
-⚠️ **Important:** BC caches uploaded versions. Once you upload `22.4.0.0`, you cannot upload a different `22.4.0.0` - you must increment the version.
-
+⚠️ **Important:** 
+- BC caches uploaded versions. Once you upload `22.4.0.0`, you cannot upload a different `22.4.0.0` - you must increment the version.
+- `.app` file ending in `_DEV` will always be the latest version installed locally for testing. 
 ## Testing Changes
 
 ### (Optional) Create a Sandbox

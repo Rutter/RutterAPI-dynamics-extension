@@ -473,6 +473,36 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Line Overrides API - Control RTRVATAmountAPI - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 2112963543 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Purchase Order Action</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2112963543 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Purchase Order Actions</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 2112963543 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2112963543 - Control 2757394829 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Number</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Control number - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2112963543 - Control 998393528 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Status</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Control status - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2112963543 - Control 712552689 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor Number</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Purch. Order Actions API - Control vendorNumber - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2789682023 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Related G/L Entry</source>
           <note from="Developer" annotates="general" priority="2"></note>

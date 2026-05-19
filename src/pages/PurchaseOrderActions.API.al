@@ -1,7 +1,7 @@
 #if PTE
 page 71707 "RTR Purch. Order Actions API"
 #else
-page 71692589 "RTR Purch. Order Actions API"
+page 71692590 "RTR Purch. Order Actions API"
 #endif
 {
     APIVersion = 'v2.0';
@@ -78,11 +78,11 @@ page 71692589 "RTR Purch. Order Actions API"
         PurchPost.Run(Rec);
 
         ActionContext.SetObjectType(ObjectType::Page);
-        #if PTE
+#if PTE
         ActionContext.SetObjectId(Page::"RTR Purch. Order Actions API");
-        #else
+#else
         ActionContext.SetObjectId(Page::"RTR Purch. Order Actions API");
-        #endif
+#endif
         ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
         ActionContext.SetResultCode(WebServiceActionResultCode::Get);
     end;

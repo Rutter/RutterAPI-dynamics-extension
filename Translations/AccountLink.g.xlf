@@ -653,6 +653,51 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details API - Control Tax_Type - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 4154340672 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Detail Setup</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Tax Details Setup</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 3543129988 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Blocked</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control Blocked - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 3461834954 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Description</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control Description - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 4182842721 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Bus. Posting Group</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control VAT_Bus_Posting_Group - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 3008946262 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Calculation Type</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control VAT_Calculation_Type - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 2434154521 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Identifier</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control VAT_Identifier - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 1051081617 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Percent</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control VAT_Percent - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 4154340672 - Control 1277121198 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Prod. Posting Group</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Tax Details Setup API - Control VAT_Prod_Posting_Group - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 1800172393 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Tax Jurisdiction</source>
           <note from="Developer" annotates="general" priority="2"></note>

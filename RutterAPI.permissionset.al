@@ -20,7 +20,8 @@ permissionset 71692 "RTR Rutter API"
         page "RTR Gen. Jnl. Setup API" = X,
         page "RTR Purch. Line Overrides API" = X,
         page "RTR P. Payables Setup API" = X,
-        page "RTR Purch. Order Actions API" = X;
+        page "RTR Purch. Order Actions API" = X,
+        page "RTR Tax Details Setup API" = X;
 }
 #else
 permissionset 71692575 "RTR Rutter API"
@@ -44,6 +45,7 @@ permissionset 71692575 "RTR Rutter API"
         page "RTR Gen. Jnl. Setup API" = X,
         page "RTR Purch. Line Overrides API" = X,
         page "RTR P. Payables Setup API" = X,
-        page "RTR Purch. Order Actions API" = X;
+        page "RTR Purch. Order Actions API" = X,
+        page "RTR Tax Details Setup API" = X;
 }
 #endif

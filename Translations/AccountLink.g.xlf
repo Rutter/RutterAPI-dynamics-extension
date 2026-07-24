@@ -143,6 +143,11 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control amount - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 64362673 - Control 2133802707 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Applied Amount</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Applied Vendor Entries API - Control appliedAmount - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 64362673 - Control 778058367 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Closed by Amount</source>
           <note from="Developer" annotates="general" priority="2"></note>

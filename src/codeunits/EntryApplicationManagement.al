@@ -11,17 +11,16 @@ codeunit 71692576 "RTR Entry Application Mgt"
     end;
 
     // Applies a Credit Memo's Vendor Ledger Entry against one or more Bill
-    // (Invoice) entries for the same vendor, via a same-batch, net-zero pair of
-    // Gen. Journal Lines (no cash/G-L impact) posted through Gen. Jnl.-Post Line.
+    // (Invoice) entries for the same vendor, using the same codeunit BC's own
+    // "Post Application" action calls for applying two already-posted entries.
     // Needed because the standard v2.0 API can't do this reliably: appliesToInvoiceId
     // rejects Credit Memo docs, and applyVendorEntries silently drops the
     // application when driven via PATCH.
     procedure ApplyCreditMemoToBills(CreditMemoVendLedgEntry: Record "Vendor Ledger Entry"; BillsJson: Text)
     var
         BillVendLedgEntry: Record "Vendor Ledger Entry";
-        GenJnlBatch: Record "Gen. Journal Batch";
-        GenJnlLine: Record "Gen. Journal Line" temporary;
-        GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line";
+        ApplyUnapplyParameters: Record "Apply Unapply Parameters" temporary;
+        VendEntryApplyPostedEntries: Codeunit "VendEntry-Apply Posted Entries";
         BillsArray: JsonArray;
         BillToken: JsonToken;
         BillObject: JsonObject;
@@ -29,18 +28,9 @@ codeunit 71692576 "RTR Entry Application Mgt"
         AmountToken: JsonToken;
         DocumentNumber: Code[20];
         AmountToApply: Decimal;
-        TotalAmount: Decimal;
-        LineNo: Integer;
-        DocNoCounter: Integer;
-        SyntheticDocNo: Code[20];
-        // Same Payment Journal (Template/Batch) the Rutter backend already uses
-        // for bill_payments — see fetchOrCreateVendorPaymentJournalId.
-        JournalTemplateName: Code[10];
-        JournalBatchName: Code[10];
+        TotalAmountToApply: Decimal;
+        ApplyId: Code[50];
     begin
-        JournalTemplateName := 'PAYMENT';
-        JournalBatchName := 'GENERAL';
-
         if CreditMemoVendLedgEntry."Document Type" <> CreditMemoVendLedgEntry."Document Type"::"Credit Memo" then
             Error('Vendor Ledger Entry %1 is not a Credit Memo.', CreditMemoVendLedgEntry."Entry No.");
 
@@ -53,11 +43,7 @@ codeunit 71692576 "RTR Entry Application Mgt"
         if BillsArray.Count = 0 then
             Error('At least one bill must be provided.');
 
-        GetOrCreateJournalBatch(JournalTemplateName, JournalBatchName, GenJnlBatch);
-
-        LineNo := 0;
-        TotalAmount := 0;
-        DocNoCounter := 0;
+        ApplyId := Format(CreditMemoVendLedgEntry."Entry No.");
 
         foreach BillToken in BillsArray do begin
             BillObject := BillToken.AsObject();
@@ -78,63 +64,20 @@ codeunit 71692576 "RTR Entry Application Mgt"
             if not BillVendLedgEntry.Open then
                 Error('Bill %1 is not open.', DocumentNumber);
 
-            LineNo += 10000;
-            GenJnlLine.Init();
-            GenJnlLine."Journal Template Name" := JournalTemplateName;
-            GenJnlLine."Journal Batch Name" := JournalBatchName;
-            GenJnlLine."Line No." := LineNo;
-            GenJnlLine.Validate("Posting Date", WorkDate());
-            GenJnlLine.Validate("Account Type", GenJnlLine."Account Type"::Vendor);
-            GenJnlLine.Validate("Account No.", CreditMemoVendLedgEntry."Vendor No.");
-            GenJnlLine.Validate("Document Type", GenJnlLine."Document Type"::Invoice);
-            DocNoCounter += 1;
-            SyntheticDocNo := CopyStr(StrSubstNo('RTRA%1-%2', CreditMemoVendLedgEntry."Entry No.", DocNoCounter), 1, MaxStrLen(GenJnlLine."Document No."));
-            GenJnlLine.Validate("Document No.", SyntheticDocNo);
-            GenJnlLine.Validate("External Document No.", DocumentNumber);
-            GenJnlLine.Validate(Amount, -AmountToApply);
-            GenJnlLine.Validate("Applies-to Doc. Type", GenJnlLine."Applies-to Doc. Type"::Invoice);
-            GenJnlLine.Validate("Applies-to Doc. No.", DocumentNumber);
-            GenJnlLine.Insert();
+            BillVendLedgEntry."Applies-to ID" := ApplyId;
+            BillVendLedgEntry."Amount to Apply" := -AmountToApply;
+            BillVendLedgEntry.Modify();
 
-            TotalAmount += AmountToApply;
+            TotalAmountToApply += AmountToApply;
         end;
 
-        // Credit memo line nets the total, so the batch has no Bal. Account impact.
-        LineNo += 10000;
-        GenJnlLine.Init();
-        GenJnlLine."Journal Template Name" := JournalTemplateName;
-        GenJnlLine."Journal Batch Name" := JournalBatchName;
-        GenJnlLine."Line No." := LineNo;
-        GenJnlLine.Validate("Posting Date", WorkDate());
-        GenJnlLine.Validate("Account Type", GenJnlLine."Account Type"::Vendor);
-        GenJnlLine.Validate("Account No.", CreditMemoVendLedgEntry."Vendor No.");
-        GenJnlLine.Validate("Document Type", GenJnlLine."Document Type"::"Credit Memo");
-        DocNoCounter += 1;
-        SyntheticDocNo := CopyStr(StrSubstNo('RTRA%1-%2', CreditMemoVendLedgEntry."Entry No.", DocNoCounter), 1, MaxStrLen(GenJnlLine."Document No."));
-        GenJnlLine.Validate("Document No.", SyntheticDocNo);
-        GenJnlLine.Validate("External Document No.", CreditMemoVendLedgEntry."Document No.");
-        GenJnlLine.Validate(Amount, TotalAmount);
-        GenJnlLine.Validate("Applies-to Doc. Type", GenJnlLine."Applies-to Doc. Type"::"Credit Memo");
-        GenJnlLine.Validate("Applies-to Doc. No.", CreditMemoVendLedgEntry."Document No.");
-        GenJnlLine.Insert();
+        // Apply() silently no-ops if the anchor's own Amount to Apply is 0.
+        CreditMemoVendLedgEntry."Applies-to ID" := ApplyId;
+        CreditMemoVendLedgEntry."Amount to Apply" := TotalAmountToApply;
+        CreditMemoVendLedgEntry.Modify();
 
-        GenJnlLine.Reset();
-        if GenJnlLine.FindSet() then
-            repeat
-                GenJnlPostLine.RunWithCheck(GenJnlLine);
-            until GenJnlLine.Next() = 0;
-    end;
-
-    local procedure GetOrCreateJournalBatch(TemplateName: Code[10]; BatchName: Code[10]; var GenJnlBatch: Record "Gen. Journal Batch")
-    begin
-        if GenJnlBatch.Get(TemplateName, BatchName) then
-            exit;
-
-        GenJnlBatch.Init();
-        GenJnlBatch."Journal Template Name" := TemplateName;
-        GenJnlBatch.Name := BatchName;
-        GenJnlBatch.Description := 'General Journal';
-        GenJnlBatch.Insert(true);
+        ApplyUnapplyParameters.CopyFromVendLedgEntry(CreditMemoVendLedgEntry);
+        VendEntryApplyPostedEntries.Apply(CreditMemoVendLedgEntry, ApplyUnapplyParameters);
     end;
 
     procedure GetAppliedCustEntries(var AppliedCustLedgEntry: Record "Cust. Ledger Entry" temporary; CustLedgEntry: Record "Cust. Ledger Entry"; UseLCY: Boolean)

@@ -66,10 +66,32 @@ page 71692586 "RTR Gen. Jnl. Overrides API"
                         Rec."VAT Base Amount" := Rec.Amount - VATAmt;
                     end;
                 }
+                // Deferred here because BC validates VAT Bus. Posting Group before
+                // Gen. Posting Type when both are set in the same request.
+                field(RTRVatBusPostingGroupAPI; VatBusPostingGroupAPI)
+                {
+                    Caption = 'VAT Bus. Posting Group API';
+
+                    trigger OnValidate()
+                    begin
+                        Rec.Validate("VAT Bus. Posting Group", VatBusPostingGroupAPI);
+                    end;
+                }
+                field(RTRVatProdPostingGroupAPI; VatProdPostingGroupAPI)
+                {
+                    Caption = 'VAT Prod. Posting Group API';
+
+                    trigger OnValidate()
+                    begin
+                        Rec.Validate("VAT Prod. Posting Group", VatProdPostingGroupAPI);
+                    end;
+                }
             }
         }
     }
 
     var
         VATAmt: Decimal;
+        VatBusPostingGroupAPI: Code[20];
+        VatProdPostingGroupAPI: Code[20];
 }

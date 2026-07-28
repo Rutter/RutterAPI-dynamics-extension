@@ -428,6 +428,16 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Control RTRVATAmountAPI - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 667652513 - Control 2378104304 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Bus. Posting Group API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Control RTRVatBusPostingGroupAPI - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 667652513 - Control 2735254091 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>VAT Prod. Posting Group API</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Overrides API - Control RTRVatProdPostingGroupAPI - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2744850113 - Control 591517519 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Allow VAT Difference</source>
           <note from="Developer" annotates="general" priority="2"></note>

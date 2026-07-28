@@ -86,6 +86,10 @@ page 71692576 "RTR Applied Vendor Entries API"
                 {
                     Caption = 'Closed by Amount';
                 }
+                field(appliedAmount; Rec."Amount to Apply")
+                {
+                    Caption = 'Applied Amount';
+                }
                 field(closedByCurrencyCode; Rec."Closed by Currency Code")
                 {
                     Caption = 'Closed by Currency Code';

@@ -136,6 +136,29 @@ page 71692575 "RTR Vendor Ledger Entries API"
         end
     end;
 
+    // Applies this Credit Memo entry against one or more Bill (Invoice) entries
+    // for the same vendor. See EntryApplicationManagement.al for the mechanism.
+    //
+    // Call via:
+    //   POST .../vendorLedgerEntries({systemId})/Microsoft.NAV.postApplyToBills
+    //   Body: { "billsJson": "[{\"documentNumber\":\"108328\",\"amountToApply\":22.4}]" }
+    [ServiceEnabled]
+    procedure postApplyToBills(BillsJson: Text; var ActionContext: WebServiceActionContext)
+    var
+        EntryApplicationMgt: Codeunit "RTR Entry Application Mgt";
+    begin
+        EntryApplicationMgt.ApplyCreditMemoToBills(Rec, BillsJson);
+
+        ActionContext.SetObjectType(ObjectType::Page);
+#if PTE
+        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
+#else
+        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
+#endif
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
     var
         AccountId: Guid;
 }

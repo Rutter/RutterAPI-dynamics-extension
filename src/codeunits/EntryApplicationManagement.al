@@ -10,6 +10,76 @@ codeunit 71692576 "RTR Entry Application Mgt"
     begin
     end;
 
+    // Applies a Credit Memo's Vendor Ledger Entry against one or more Bill
+    // (Invoice) entries for the same vendor, using the same codeunit BC's own
+    // "Post Application" action calls for applying two already-posted entries.
+    // Needed because the standard v2.0 API can't do this reliably: appliesToInvoiceId
+    // rejects Credit Memo docs, and applyVendorEntries silently drops the
+    // application when driven via PATCH.
+    procedure ApplyCreditMemoToBills(CreditMemoVendLedgEntry: Record "Vendor Ledger Entry"; BillsJson: Text)
+    var
+        BillVendLedgEntry: Record "Vendor Ledger Entry";
+        ApplyUnapplyParameters: Record "Apply Unapply Parameters" temporary;
+        VendEntryApplyPostedEntries: Codeunit "VendEntry-Apply Posted Entries";
+        BillsArray: JsonArray;
+        BillToken: JsonToken;
+        BillObject: JsonObject;
+        DocNoToken: JsonToken;
+        AmountToken: JsonToken;
+        DocumentNumber: Code[20];
+        AmountToApply: Decimal;
+        TotalAmountToApply: Decimal;
+        ApplyId: Code[50];
+    begin
+        if CreditMemoVendLedgEntry."Document Type" <> CreditMemoVendLedgEntry."Document Type"::"Credit Memo" then
+            Error('Vendor Ledger Entry %1 is not a Credit Memo.', CreditMemoVendLedgEntry."Entry No.");
+
+        if not CreditMemoVendLedgEntry.Open then
+            Error('Credit Memo %1 is not open.', CreditMemoVendLedgEntry."Document No.");
+
+        if not BillsArray.ReadFrom(BillsJson) then
+            Error('Invalid bills payload: could not parse JSON.');
+
+        if BillsArray.Count = 0 then
+            Error('At least one bill must be provided.');
+
+        ApplyId := Format(CreditMemoVendLedgEntry."Entry No.");
+
+        foreach BillToken in BillsArray do begin
+            BillObject := BillToken.AsObject();
+            if not BillObject.Get('documentNumber', DocNoToken) then
+                Error('Each bill entry requires a documentNumber.');
+            if not BillObject.Get('amountToApply', AmountToken) then
+                Error('Each bill entry requires an amountToApply.');
+
+            DocumentNumber := CopyStr(DocNoToken.AsValue().AsText(), 1, MaxStrLen(DocumentNumber));
+            AmountToApply := AmountToken.AsValue().AsDecimal();
+
+            BillVendLedgEntry.Reset();
+            BillVendLedgEntry.SetRange("Vendor No.", CreditMemoVendLedgEntry."Vendor No.");
+            BillVendLedgEntry.SetRange("Document Type", BillVendLedgEntry."Document Type"::Invoice);
+            BillVendLedgEntry.SetRange("Document No.", DocumentNumber);
+            if not BillVendLedgEntry.FindFirst() then
+                Error('Bill %1 not found for vendor %2.', DocumentNumber, CreditMemoVendLedgEntry."Vendor No.");
+            if not BillVendLedgEntry.Open then
+                Error('Bill %1 is not open.', DocumentNumber);
+
+            BillVendLedgEntry."Applies-to ID" := ApplyId;
+            BillVendLedgEntry."Amount to Apply" := -AmountToApply;
+            BillVendLedgEntry.Modify();
+
+            TotalAmountToApply += AmountToApply;
+        end;
+
+        // Apply() silently no-ops if the anchor's own Amount to Apply is 0.
+        CreditMemoVendLedgEntry."Applies-to ID" := ApplyId;
+        CreditMemoVendLedgEntry."Amount to Apply" := TotalAmountToApply;
+        CreditMemoVendLedgEntry.Modify();
+
+        ApplyUnapplyParameters.CopyFromVendLedgEntry(CreditMemoVendLedgEntry);
+        VendEntryApplyPostedEntries.Apply(CreditMemoVendLedgEntry, ApplyUnapplyParameters);
+    end;
+
     procedure GetAppliedCustEntries(var AppliedCustLedgEntry: Record "Cust. Ledger Entry" temporary; CustLedgEntry: Record "Cust. Ledger Entry"; UseLCY: Boolean)
     var
         DtldCustLedgEntry: Record "Detailed Cust. Ledg. Entry";

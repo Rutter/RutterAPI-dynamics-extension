@@ -30,6 +30,7 @@ codeunit 71692576 "RTR Entry Application Mgt"
         AmountToApply: Decimal;
         TotalAmountToApply: Decimal;
         ApplyId: Code[50];
+        SeenBillEntryNos: Record "Integer" temporary;
     begin
         if CreditMemoVendLedgEntry."Document Type" <> CreditMemoVendLedgEntry."Document Type"::"Credit Memo" then
             Error('Vendor Ledger Entry %1 is not a Credit Memo.', CreditMemoVendLedgEntry."Entry No.");
@@ -55,6 +56,9 @@ codeunit 71692576 "RTR Entry Application Mgt"
             DocumentNumber := CopyStr(DocNoToken.AsValue().AsText(), 1, MaxStrLen(DocumentNumber));
             AmountToApply := AmountToken.AsValue().AsDecimal();
 
+            if AmountToApply <= 0 then
+                Error('Bill %1 amountToApply must be greater than zero.', DocumentNumber);
+
             BillVendLedgEntry.Reset();
             BillVendLedgEntry.SetRange("Vendor No.", CreditMemoVendLedgEntry."Vendor No.");
             BillVendLedgEntry.SetRange("Document Type", BillVendLedgEntry."Document Type"::Invoice);
@@ -63,6 +67,12 @@ codeunit 71692576 "RTR Entry Application Mgt"
                 Error('Bill %1 not found for vendor %2.', DocumentNumber, CreditMemoVendLedgEntry."Vendor No.");
             if not BillVendLedgEntry.Open then
                 Error('Bill %1 is not open.', DocumentNumber);
+
+            if BillVendLedgEntry."Currency Code" <> CreditMemoVendLedgEntry."Currency Code" then
+                Error('Bill %1 currency (%2) does not match Credit Memo currency (%3).', DocumentNumber, BillVendLedgEntry."Currency Code", CreditMemoVendLedgEntry."Currency Code");
+
+            if not TryCacheEntryNo(SeenBillEntryNos, BillVendLedgEntry."Entry No.") then
+                Error('Bill %1 was specified more than once.', DocumentNumber);
 
             BillVendLedgEntry."Applies-to ID" := ApplyId;
             BillVendLedgEntry."Amount to Apply" := -AmountToApply;

@@ -150,11 +150,7 @@ page 71692575 "RTR Vendor Ledger Entries API"
         EntryApplicationMgt.ApplyCreditMemoToBills(Rec, BillsJson);
 
         ActionContext.SetObjectType(ObjectType::Page);
-#if PTE
         ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
-#else
-        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
-#endif
         ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
         ActionContext.SetResultCode(WebServiceActionResultCode::Get);
     end;

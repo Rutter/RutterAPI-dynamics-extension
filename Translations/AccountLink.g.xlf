@@ -458,6 +458,31 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Gen. Jnl. Setup API - Control name - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 588337104 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Journal Batch Action</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Property EntityCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 588337104 - Property 631549417" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Journal Batch Actions</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Property EntitySetCaption</note>
+        </trans-unit>
+        <trans-unit id="Page 588337104 - Control 707985127 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Control code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 588337104 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Control id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 588337104 - Control 2958552522 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Journal Template Name</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Control journalTemplateName - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 2701958104 - Control 591517519 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Allow VAT Difference</source>
           <note from="Developer" annotates="general" priority="2"></note>

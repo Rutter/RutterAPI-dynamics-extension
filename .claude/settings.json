@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jsign:*)",
+      "Bash(az account:*)",
+      "Bash(git tag:*)",
+      "mcp__claude-in-chrome__*"
+    ]
+  }
+}

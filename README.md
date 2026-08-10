@@ -176,6 +176,26 @@ Always use PTE IDs (`71692 - 71799`) in your `#if PTE` branch and AppSource IDs 
 4. Upload to Microsoft Partner Center (reach out to Leo or Eric for this step)
 5. If there are no errors, it takes at least 3 days for the new version to be published
 
+## Automated release with Claude Code
+
+Steps 3–4 above (plus the build itself) are automated as a Claude Code skill in `.claude/skills/appsource-release/`. You need: the [Claude in Chrome](https://code.claude.com/docs/en/chrome) extension installed, a Chrome profile logged into [Partner Center](https://partner.microsoft.com/dashboard), `jsign` + Azure CLI (`az login`) with signing access (same prerequisites as manual signing below).
+
+From the repo root:
+
+```bash
+claude --chrome        # start Claude Code connected to your Chrome
+```
+
+Then in the session:
+
+```
+/appsource-release             # auto-bumps the last version segment
+/appsource-release 22.4.0.0    # or pin an explicit version
+/appsource-release status      # check/troubleshoot the current submission; clicks Go live at Publisher signoff
+```
+
+The skill compiles the AppSource package (handling the `app_AppSource.json` swap safely, with `app.json` always restored to PTE state), signs it via jsign/Azure Trusted Signing, updates the offer in your browser (Properties → App version, Technical configuration → package), submits it for validation, and records the release in `RELEASES.md` + an `appsource-v<version>` git tag. It pauses if Partner Center asks for login/MFA, checks back ~1 hour after submitting for early validation failures, and — on `status` runs — signs off (**Go live**) when the submission reaches Publisher signoff, then confirms the final publish. Because Microsoft validation takes days, run `/appsource-release status` whenever you want it to check and act; in-session timers only live as long as the session. The manual steps below remain the fallback and the reference for what it does.
+
 ## Signing the .app Package
 
 The `.app` file must be code-signed before uploading to Microsoft Partner Center. We use [jsign](https://ebourg.github.io/jsign/) with Azure Trusted Signing.

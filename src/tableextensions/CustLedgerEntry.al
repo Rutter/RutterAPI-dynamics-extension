@@ -25,6 +25,12 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             TableRelation = Currency.SystemId;
             Editable = false;
         }
+        field(71753; "RTR Sales Invoice Id"; Guid)
+        {
+            Caption = 'Sales Invoice Id';
+            Editable = false;
+            DataClassification = CustomerContent;
+        }
     }
 }
 #else
@@ -53,6 +59,12 @@ tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             FieldClass = FlowField;
             TableRelation = Currency.SystemId;
             Editable = false;
+        }
+        field(71692578; "RTR Sales Invoice Id"; Guid)
+        {
+            Caption = 'Sales Invoice Id';
+            Editable = false;
+            DataClassification = CustomerContent;
         }
     }
 }

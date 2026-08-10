@@ -28,22 +28,49 @@ Detailed click-paths, troubleshooting, and fallbacks: `${CLAUDE_SKILL_DIR}/refer
 
 ## Step 0 — Preflight
 
-1. **Browser bridge**: the Partner Center upload needs the Claude in Chrome
-   tools (`mcp__claude-in-chrome__*`). If they are not available in this
-   session, ask the user to run `/chrome` (or restart with `claude --chrome`)
-   and stop until they have.
+0. **`file_ready` check**: ask whether a package is already built and ready
+   to ship (e.g. built manually in VS Code, or left over from a prior partial
+   run) — default `file_ready = false` unless the user confirms one exists
+   and names it. Building always bumps the version, so defaulting to "build"
+   when a good package already exists on disk leaves an unwanted extra
+   version bump behind — don't assume, ask.
+   - `file_ready = true` → skip Step 1 (build) entirely — go straight to
+     **Step 2 (sign)** with the named file, then continue normally from
+     Step 3. Signing is never skipped, even here. (Step 0.3's `app.json`
+     check still runs regardless — see below.)
+   - `file_ready = false` (default) → continue with the normal flow below.
+1. **Browser bridge**: the Partner Center upload needs a browser-automation
+   tool. Prefer Claude in Chrome (`mcp__claude-in-chrome__*`) if available. If
+   it's not available, ask the user to run `/chrome` (or restart with
+   `claude --chrome`) once. If it still won't connect after that, search via
+   ToolSearch for any other available browser-automation MCP tool (e.g.
+   Playwright) and use it instead — the click-path in reference.md is
+   tool-agnostic, just adapt navigate/click/type/upload calls to whichever
+   tool is on hand. Only stop and ask the user if no browser-automation tool
+   is available at all.
 2. **Repo state**: run `git status` from the repo root. Uncommitted changes to
    `src/` or `app_AppSource.json` are fine to release only if the user intended
    them — mention anything surprising.
-3. **Golden rule check**: `app.json` must be in PTE state — its `id` must end
-   in `...2301` and its `idRanges` must start at `71692`. If it contains the
-   AppSource id (`...2307`) it was left swapped by a previous build; restore it
-   (`git restore app.json`) before continuing and tell the user.
+3. **Golden rule check** (always run, even if `file_ready = true`): `app.json`
+   must be in PTE state — its `id` must end in `...2301` and its `idRanges`
+   must start at `71692`. If it contains the AppSource id (`...2307`) instead:
+   - `file_ready = false` (building): restore it (`git restore app.json`)
+     before continuing and tell the user. If `git status` shows no diff (the
+     swap was already committed by an earlier run, so restore does nothing),
+     manually edit `app.json` back to the PTE `id`/`idRanges`/
+     `preprocessorSymbols: ["PTE"]`, keep the current version number as-is
+     (don't roll it back), and commit that fix before continuing.
+   - `file_ready = true` (not building): don't touch `app.json` — just notify
+     the user it's currently in the wrong state, so it doesn't surprise
+     someone on the next build.
 4. Confirm `jsign` exists (`command -v jsign`) and Azure CLI is logged in
    (`az account show`). If not: `brew install jsign` / `az login` — the login
    must be done by the user, so pause and ask if needed.
 
 ## Step 1 — Build the AppSource package
+
+Skip this whole step if `file_ready = true` — go straight to Step 2 with the
+named file.
 
 ```
 bash "${CLAUDE_SKILL_DIR}/scripts/build.sh" $ARGUMENTS

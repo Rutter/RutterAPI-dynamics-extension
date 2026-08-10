@@ -408,6 +408,11 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control remainingAmount - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 1877378184 - Control 2972444136 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Sales Invoice Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control salesInvoiceId - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 667652513 - Property 3446740159" size-unit="char" translate="yes" xml:space="preserve">
           <source>Gen. Journal Line Overrides</source>
           <note from="Developer" annotates="general" priority="2"></note>
@@ -892,6 +897,11 @@
           <source>Journal Id</source>
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">TableExtension RTR Cust. Ledger Entry - Field RTR Journal Id - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 657456894 - Field 3863157748 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 2733917450">
+          <source>Sales Invoice Id</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension RTR Cust. Ledger Entry - Field RTR Sales Invoice Id - Property Caption</note>
         </trans-unit>
         <trans-unit id="TableExtension 1463782731 - Field 3151848618 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 406314583">
           <source>Currency Id</source>

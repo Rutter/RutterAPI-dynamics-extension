@@ -84,11 +84,22 @@ cp app_AppSource.json app.json
 AL_EXT="$(ls -td "$HOME/.vscode/extensions"/ms-dynamics-smb.al-*/ 2>/dev/null | head -1 || true)"
 AL_EXT="${AL_EXT%/}"
 [ -n "$AL_EXT" ] || { echo "ERROR: AL Language extension not found under ~/.vscode/extensions (install it in VS Code)." >&2; exit 1; }
+# Pick candidates by actual host OS/arch first — a stale binary for another
+# platform can exist on disk (e.g. a synced/shared extensions dir) and would
+# otherwise be picked by file-existence alone, failing with "Exec format error".
+case "$(uname -s)" in
+  Darwin) case "$(uname -m)" in
+            arm64) CANDIDATES=("$AL_EXT/bin/darwin/arm64/alc" "$AL_EXT/bin/darwin/alc") ;;
+            *)     CANDIDATES=("$AL_EXT/bin/darwin/alc" "$AL_EXT/bin/darwin/arm64/alc") ;;
+          esac ;;
+  Linux)  CANDIDATES=("$AL_EXT/bin/linux/alc") ;;
+  *)      CANDIDATES=("$AL_EXT/bin/linux/alc" "$AL_EXT/bin/darwin/alc" "$AL_EXT/bin/darwin/arm64/alc") ;;
+esac
 ALC=""
-for cand in "$AL_EXT/bin/darwin/arm64/alc" "$AL_EXT/bin/darwin/alc" "$AL_EXT/bin/linux/alc"; do
+for cand in "${CANDIDATES[@]}"; do
   [ -f "$cand" ] && { ALC="$cand"; break; }
 done
-[ -n "$ALC" ] || { echo "ERROR: alc binary not found inside $AL_EXT" >&2; exit 1; }
+[ -n "$ALC" ] || { echo "ERROR: alc binary not found inside $AL_EXT for $(uname -s)/$(uname -m)" >&2; exit 1; }
 chmod +x "$ALC" 2>/dev/null || true
 
 # --- symbols must already be downloaded (VS Code: AL: Download Symbols) ---
@@ -103,7 +114,7 @@ COP_DLL="$(find "$AL_EXT/bin" -name 'Microsoft.Dynamics.Nav.AppSourceCop.dll' 2>
 OUT_FILE="Rutter_AccountLink_${NEW_VERSION}.app"
 echo "Compiling with: $ALC"
 if [ -n "$COP_DLL" ]; then
-  "$ALC" /project:"$REPO_ROOT" /packagecachepath:"$REPO_ROOT/.alpackages" /out:"$REPO_ROOT/$OUT_FILE" "/analyzers:$COP_DLL"
+  "$ALC" /project:"$REPO_ROOT" /packagecachepath:"$REPO_ROOT/.alpackages" /out:"$REPO_ROOT/$OUT_FILE" "/analyzer:$COP_DLL"
 else
   echo "WARN: AppSourceCop.dll not found — compiling WITHOUT AppSourceCop. Partner Center validation may catch issues locally missed." >&2
   "$ALC" /project:"$REPO_ROOT" /packagecachepath:"$REPO_ROOT/.alpackages" /out:"$REPO_ROOT/$OUT_FILE"

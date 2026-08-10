@@ -62,6 +62,10 @@ page 71692578 "RTR Cust. Ledger Entries API"
                 {
                     Caption = 'Customer Id';
                 }
+                field(salesInvoiceId; Rec."RTR Sales Invoice Id")
+                {
+                    Caption = 'Sales Invoice Id';
+                }
                 field(customerNumber; Rec."Customer No.")
                 {
                     Caption = 'Customer No.';

@@ -44,4 +44,37 @@ codeunit 71692577 "RTR Journal Line Mgt"
             DeletedCount += 1;
         end;
     end;
+
+    // Posts only these lines via Gen. Jnl.-Post Line directly, unlike Microsoft.NAV.post which
+    // posts the whole batch. No Commit() in that codeunit, so a failed line rolls back the rest.
+    procedure PostLines(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdsJson: Text) PostedCount: Integer
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+        GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line";
+        LineIdsArray: JsonArray;
+        LineIdToken: JsonToken;
+        LineId: Guid;
+    begin
+        if not LineIdsArray.ReadFrom(LineIdsJson) then
+            Error('Invalid line ids payload: could not parse JSON.');
+
+        if LineIdsArray.Count = 0 then
+            Error('At least one line id must be provided.');
+
+        foreach LineIdToken in LineIdsArray do begin
+            if not Evaluate(LineId, LineIdToken.AsValue().AsText()) then
+                Error('Invalid line id: %1.', LineIdToken.AsValue().AsText());
+
+            GenJournalLine.Reset();
+            GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
+            GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
+            GenJournalLine.SetRange(SystemId, LineId);
+            if not GenJournalLine.FindFirst() then
+                Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
+
+            GenJnlPostLine.RunWithCheck(GenJournalLine);
+            GenJournalLine.Delete(true);
+            PostedCount += 1;
+        end;
+    end;
 }

@@ -60,4 +60,13 @@ page 71692592 "RTR Journal Batch Actions API"
     begin
         exit(JournalLineMgt.DeleteLines(Rec."Journal Template Name", Rec.Name, LineIdsJson));
     end;
+
+    // Posts only the given lines, not the whole batch — see JournalLineManagement.al.
+    [ServiceEnabled]
+    procedure postLines(LineIdsJson: Text): Integer
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        exit(JournalLineMgt.PostLines(Rec."Journal Template Name", Rec.Name, LineIdsJson));
+    end;
 }

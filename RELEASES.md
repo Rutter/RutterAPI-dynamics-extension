@@ -1,5 +1,10 @@
 # Releases
 
+## v22.4.0.1 — 2026-08-26
+- File: Rutter_AccountLink_22.4.0.1.app (signed, Azure Trusted Signing)
+- Submitted to Partner Center for automated validation (~3+ business days)
+- Changes: batch delete journal lines batch operation; VAT country tax area/tax group equivalent support for journal lines; new post-lines action to post a given set of journal lines.
+
 ## v22.3.0.17 — 2026-08-10
 - File: Rutter_AccountLink_22.3.0.17.app (signed, Azure Trusted Signing)
 - Submitted to Partner Center for automated validation (~3+ business days)

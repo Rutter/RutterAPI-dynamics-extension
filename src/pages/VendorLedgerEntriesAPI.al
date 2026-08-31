@@ -155,6 +155,57 @@ page 71692575 "RTR Vendor Ledger Entries API"
         ActionContext.SetResultCode(WebServiceActionResultCode::Get);
     end;
 
+    // Reverses the entry's whole posting transaction — BC has no delete for a posted entry.
+    //
+    // Call via:
+    //   POST .../vendorLedgerEntries({systemId})/Microsoft.NAV.reverseTransaction
+    [ServiceEnabled]
+    procedure reverseTransaction(var ActionContext: WebServiceActionContext)
+    var
+        VendLedgEntryMgt: Codeunit "RTR Vendor Ledger Entry Mgt";
+    begin
+        VendLedgEntryMgt.ReverseTransaction(Rec."Transaction No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
+    // Unapplies the entry's open application, if any.
+    //
+    // Call via:
+    //   POST .../vendorLedgerEntries({systemId})/Microsoft.NAV.unapplyEntry
+    [ServiceEnabled]
+    procedure unapplyEntry(var ActionContext: WebServiceActionContext)
+    var
+        VendLedgEntryMgt: Codeunit "RTR Vendor Ledger Entry Mgt";
+    begin
+        VendLedgEntryMgt.UnapplyEntry(Rec."Entry No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
+    // What a posted vendor payment actually needs to be undone (unapply + reverse).
+    //
+    // Call via:
+    //   POST .../vendorLedgerEntries({systemId})/Microsoft.NAV.unapplyAndReverseTransaction
+    [ServiceEnabled]
+    procedure unapplyAndReverseTransaction(var ActionContext: WebServiceActionContext)
+    var
+        VendLedgEntryMgt: Codeunit "RTR Vendor Ledger Entry Mgt";
+    begin
+        VendLedgEntryMgt.UnapplyAndReverseTransaction(Rec."Entry No.", Rec."Transaction No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Vendor Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
     var
         AccountId: Guid;
 }

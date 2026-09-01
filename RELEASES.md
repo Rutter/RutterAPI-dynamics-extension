@@ -1,5 +1,10 @@
 # Releases
 
+## v22.4.0.2 — 2026-09-01
+- File: Rutter_AccountLink_22.4.0.2.app (signed, Azure Trusted Signing)
+- Submitted to Partner Center for automated validation (~3+ business days)
+- Changes: invoice credit memos report now shows correct amount applied per invoice; repo file cleanup; new predeploy file-prep skill.
+
 ## v22.4.0.1 — 2026-08-26
 - File: Rutter_AccountLink_22.4.0.1.app (signed, Azure Trusted Signing)
 - Submitted to Partner Center for automated validation (~3+ business days)

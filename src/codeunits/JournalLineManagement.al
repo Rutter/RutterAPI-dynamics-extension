@@ -68,7 +68,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // (and events can't be raised from an extension), so check the restriction directly.
         GenJournalBatch.Get(JournalTemplateName, JournalBatchName);
         if not RecordRestrictionMgt.CheckRecordHasUsageRestrictions(GenJournalBatch) then
-            Error(GetLastErrorText());
+            Error('%1', GetLastErrorText());
 
         foreach LineIdToken in LineIdsArray do begin
             if not Evaluate(LineId, LineIdToken.AsValue().AsText()) then
@@ -82,7 +82,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
 
             if not RecordRestrictionMgt.CheckRecordHasUsageRestrictions(GenJournalLine) then
-                Error(GetLastErrorText());
+                Error('%1', GetLastErrorText());
 
             GenJnlPostLine.RunWithCheck(GenJournalLine);
             GenJournalLine.Delete(true);

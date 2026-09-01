@@ -1,7 +1,7 @@
 ---
 name: predeploy-file-prep
 description: Clean up the pile of .app packages before a deploy — rotate the local _DEV test build and prune old published packages down to the two most recent. Use when asked to prep files before deploying, clean up .app files, rotate the DEV build, or tidy the repo before a release.
-argument-hint: "[dev-only]"
+argument-hint: "[dev-only|no-bump]"
 allowed-tools: Bash(bash *) Bash(git *) Read Glob Grep
 ---
 
@@ -23,6 +23,12 @@ Modes (`$ARGUMENTS`):
   published packages down to two.
 - `dev-only` — just the DEV rotation. Use when you only want to tidy local
   test builds without cutting a new AppSource package yet.
+- `no-bump` — full prep, but Step 2 rebuilds the **current**
+  `app_AppSource.json` version instead of bumping to the next one. For a
+  redeploy of a version not yet submitted to Partner Center (a second build
+  for the same PR after review comments), where bumping burns a version
+  number for nothing. Never use it on a version already submitted —
+  AppSource rejects a reused version.
 
 Both scripts below default to a **dry run**: they print the exact plan
 (what becomes the new `_DEV`, what gets deleted, what gets pruned) and touch
@@ -64,7 +70,8 @@ the old `_DEV` file, and deletes the other untracked stragglers in between.
 
 Confirm with the user before running this — it permanently bumps
 `app_AppSource.json`'s version, and BC/AppSource never accepts a reused
-version number, so an unwanted build burns one for good.
+version number, so an unwanted build burns one for good. (`no-bump` skips
+the bump — see the mode list and the variant invocation below.)
 
 `app.json`'s version is deliberately left untouched by this step — it stays
 equal to the `_DEV` version from Step 1 (see the invariant above), not
@@ -79,6 +86,18 @@ already does the exact swap-bump-package-revert dance (copy
 ```
 bash "${CLAUDE_SKILL_DIR}/../appsource-release/scripts/build.sh"
 ```
+
+With `no-bump`, pass the current version explicitly — `build.sh` skips the
+bump when the requested version equals the current one, so this rebuilds the
+same package in place:
+
+```
+bash "${CLAUDE_SKILL_DIR}/../appsource-release/scripts/build.sh" \
+  "$(python3 -c 'import json;print(json.load(open("app_AppSource.json"))["version"])')"
+```
+
+The rebuilt file overwrites the existing `.app` of that version, so Step 3
+has nothing new to prune.
 
 - On success it prints `NEW_VERSION=` and `APP_FILE=`. `git add "<APP_FILE>"`
   so Step 3 can see it.

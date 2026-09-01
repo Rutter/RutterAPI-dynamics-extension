@@ -11,7 +11,9 @@ APPLY=0
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 cd "$REPO_ROOT"
 
-mapfile -t PUBLISHED < <(git ls-files 'Rutter_AccountLink_*.app' \
+# read -r loops, not mapfile: macOS ships bash 3.2, where mapfile doesn't exist.
+PUBLISHED=()
+while IFS= read -r line; do PUBLISHED+=("$line"); done < <(git ls-files 'Rutter_AccountLink_*.app' \
   | grep -E '^Rutter_AccountLink_[0-9]+(\.[0-9]+){3}\.app$' || true)
 
 if [ "${#PUBLISHED[@]}" -le 2 ]; then
@@ -19,7 +21,8 @@ if [ "${#PUBLISHED[@]}" -le 2 ]; then
   exit 0
 fi
 
-mapfile -t SORTED < <(printf '%s\n' "${PUBLISHED[@]}" \
+SORTED=()
+while IFS= read -r line; do SORTED+=("$line"); done < <(printf '%s\n' "${PUBLISHED[@]}" \
   | sed -E 's/^Rutter_AccountLink_(.*)\.app$/\1/' | sort -V \
   | sed -E 's/^(.*)$/Rutter_AccountLink_\1.app/')
 

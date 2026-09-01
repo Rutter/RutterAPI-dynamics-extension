@@ -15,11 +15,14 @@ APPLY=0
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 cd "$REPO_ROOT"
 
-mapfile -t OLD_DEV < <(git ls-files 'Rutter_AccountLink_*_DEV.app')
+# read -r loops, not mapfile: macOS ships bash 3.2, where mapfile doesn't exist.
+OLD_DEV=()
+while IFS= read -r line; do OLD_DEV+=("$line"); done < <(git ls-files 'Rutter_AccountLink_*_DEV.app')
 [ "${#OLD_DEV[@]}" -le 1 ] || { echo "ERROR: multiple _DEV files tracked: ${OLD_DEV[*]}" >&2; exit 1; }
 OLD_DEV_FILE="${OLD_DEV[0]:-}"
 
-mapfile -t CANDIDATES < <(git status --porcelain --untracked-files=all -- 'Rutter_AccountLink_*.app' \
+CANDIDATES=()
+while IFS= read -r line; do CANDIDATES+=("$line"); done < <(git status --porcelain --untracked-files=all -- 'Rutter_AccountLink_*.app' \
   | awk '{print $2}' | grep -E '^Rutter_AccountLink_[0-9]+(\.[0-9]+){3}\.app$' || true)
 
 if [ "${#CANDIDATES[@]}" -eq 0 ]; then

@@ -31,6 +31,12 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             Editable = false;
             DataClassification = CustomerContent;
         }
+        field(71754; "RTR Sales Cr. Memo Id"; Guid)
+        {
+            Caption = 'Sales Cr. Memo Id';
+            Editable = false;
+            DataClassification = CustomerContent;
+        }
     }
 }
 #else
@@ -63,6 +69,12 @@ tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
         field(71692578; "RTR Sales Invoice Id"; Guid)
         {
             Caption = 'Sales Invoice Id';
+            Editable = false;
+            DataClassification = CustomerContent;
+        }
+        field(71692579; "RTR Sales Cr. Memo Id"; Guid)
+        {
+            Caption = 'Sales Cr. Memo Id';
             Editable = false;
             DataClassification = CustomerContent;
         }

@@ -30,17 +30,23 @@ codeunit 71692575 "RTR Rutter Management"
     local procedure SalesPostOnAfterPostSalesDoc(var SalesHeader: Record "Sales Header"; var GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line"; SalesShptHdrNo: Code[20]; RetRcpHdrNo: Code[20]; SalesInvHdrNo: Code[20]; SalesCrMemoHdrNo: Code[20]; CommitIsSuppressed: Boolean; InvtPickPutaway: Boolean; var CustLedgerEntry: Record "Cust. Ledger Entry"; WhseShip: Boolean; WhseReceiv: Boolean; PreviewMode: Boolean)
     var
         SalesInvoiceEntityAggregate: Record "Sales Invoice Entity Aggregate";
+        SalesCrMemoEntityBuffer: Record "Sales Cr. Memo Entity Buffer";
     begin
-        if SalesInvHdrNo = '' then
-            exit;
         if CustLedgerEntry."Entry No." = 0 then
             exit;
         if PreviewMode then
             exit;
-        if not SalesInvoiceEntityAggregate.Get(SalesInvHdrNo, true) then
-            exit;
 
-        CustLedgerEntry."RTR Sales Invoice Id" := SalesInvoiceEntityAggregate.Id;
+        // Same reasoning for credit memos: "Sales Cr. Memo Entity Buffer" is what
+        // the public salesCreditMemos API binds "id" to.
+        if SalesInvoiceEntityAggregate.Get(SalesInvHdrNo, true) then
+            CustLedgerEntry."RTR Sales Invoice Id" := SalesInvoiceEntityAggregate.Id
+        else
+            if SalesCrMemoEntityBuffer.Get(SalesCrMemoHdrNo, true) then
+                CustLedgerEntry."RTR Sales Cr. Memo Id" := SalesCrMemoEntityBuffer.Id
+            else
+                exit;
+
         CustLedgerEntry.Modify();
     end;
 }

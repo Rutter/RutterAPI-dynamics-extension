@@ -50,7 +50,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
     procedure PostLines(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdsJson: Text) PostedCount: Integer
     var
         GenJournalLine: Record "Gen. Journal Line";
+        GenJournalBatch: Record "Gen. Journal Batch";
         GenJnlPostLine: Codeunit "Gen. Jnl.-Post Line";
+        RecordRestrictionMgt: Codeunit "Record Restriction Mgt.";
         LineIdsArray: JsonArray;
         LineIdToken: JsonToken;
         LineId: Guid;
@@ -60,6 +62,13 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         if LineIdsArray.Count = 0 then
             Error('At least one line id must be provided.');
+
+        // Gen. Jnl.-Post Line skips the approval-pending restrictions Gen. Jnl.-Post Batch
+        // enforces. The table's OnCheckGenJournalLinePostRestrictions event is OnPrem-scoped
+        // (and events can't be raised from an extension), so check the restriction directly.
+        GenJournalBatch.Get(JournalTemplateName, JournalBatchName);
+        if not RecordRestrictionMgt.CheckRecordHasUsageRestrictions(GenJournalBatch) then
+            Error('%1', GetLastErrorText());
 
         foreach LineIdToken in LineIdsArray do begin
             if not Evaluate(LineId, LineIdToken.AsValue().AsText()) then
@@ -71,6 +80,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
             GenJournalLine.SetRange(SystemId, LineId);
             if not GenJournalLine.FindFirst() then
                 Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
+
+            if not RecordRestrictionMgt.CheckRecordHasUsageRestrictions(GenJournalLine) then
+                Error('%1', GetLastErrorText());
 
             GenJnlPostLine.RunWithCheck(GenJournalLine);
             GenJournalLine.Delete(true);

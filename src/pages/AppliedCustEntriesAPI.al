@@ -86,6 +86,11 @@ page 71692579 "RTR Applied Cust. Entries API"
                 {
                     Caption = 'Closed by Amount';
                 }
+                // GetAppliedCustEntries stows the real per-application amount here.
+                field(appliedAmount; Rec."Amount to Apply")
+                {
+                    Caption = 'Applied Amount';
+                }
                 field(closedByCurrencyCode; Rec."Closed by Currency Code")
                 {
                     Caption = 'Closed by Currency Code';

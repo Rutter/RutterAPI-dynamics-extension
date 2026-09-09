@@ -37,6 +37,18 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             Editable = false;
             DataClassification = CustomerContent;
         }
+        field(71755; "RTR Deleted At"; DateTime)
+        {
+            // Durable delete marker (FND-2620): a DELETE reverses the posted
+            // payment, and the resulting open-unapplied entry is otherwise
+            // indistinguishable from a live one (BC's unapply-side reversal
+            // does not set Reversed, and negative Remaining Amount is just
+            // the open-credit direction). The extension stamps this field at
+            // delete time so Rutter's read model can exclude the entry.
+            Caption = 'Deleted At';
+            Editable = false;
+            DataClassification = CustomerContent;
+        }
     }
 }
 #else
@@ -75,6 +87,18 @@ tableextension 71692576 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
         field(71692579; "RTR Sales Cr. Memo Id"; Guid)
         {
             Caption = 'Sales Cr. Memo Id';
+            Editable = false;
+            DataClassification = CustomerContent;
+        }
+        field(71692580; "RTR Deleted At"; DateTime)
+        {
+            // Durable delete marker (FND-2620): a DELETE reverses the posted
+            // payment, and the resulting open-unapplied entry is otherwise
+            // indistinguishable from a live one (BC's unapply-side reversal
+            // does not set Reversed, and negative Remaining Amount is just
+            // the open-credit direction). The extension stamps this field at
+            // delete time so Rutter's read model can exclude the entry.
+            Caption = 'Deleted At';
             Editable = false;
             DataClassification = CustomerContent;
         }

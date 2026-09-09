@@ -111,9 +111,14 @@ page 71692578 "RTR Cust. Ledger Entries API"
                     Caption = 'Open';
                 }
                 // Reversal state — Rutter's invoice_payment read model must
-                // exclude reversed payments: a DELETE reverses the posting,
-                // and without this flag the reversed entry would re-sync as a
-                // live payment on the next refresh (FND-2620).
+                // exclude deleted/reversed payments: a DELETE reverses the
+                // posting, and without this the reversed entry would re-sync
+                // as a live payment on the next refresh (FND-2620). The
+                // durable marker is the extension-stamped `deletedAt` (the
+                // unapply-side reversal does not set the CLE's own Reversed
+                // flag, and negative Remaining Amount is just BC's
+                // open-credit direction — a live unapplied payment looks
+                // identical).
                 field(reversed; Rec.Reversed)
                 {
                     Caption = 'Reversed';
@@ -121,6 +126,10 @@ page 71692578 "RTR Cust. Ledger Entries API"
                 field(reversedByEntryNo; Rec."Reversed by Entry No.")
                 {
                     Caption = 'Reversed by Entry No.';
+                }
+                field(deletedAt; Rec."RTR Deleted At")
+                {
+                    Caption = 'Deleted At';
                 }
                 field(remainingAmount; Rec."Remaining Amount")
                 {

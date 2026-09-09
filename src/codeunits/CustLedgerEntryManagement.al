@@ -47,10 +47,17 @@ codeunit 71692579 "RTR Cust. Ledger Entry Mgt"
     end;
 
     // Unapplying a payment already reverses it, so only reverse if there was nothing to unapply.
-    // Mirrors RTR Vendor Ledger Entry Mgt (FND-2616) for the sales side (FND-2620).
+    // Stamps the durable delete marker afterwards: the resulting open-unapplied entry is
+    // otherwise indistinguishable from a live one (FND-2620). Mirrors the vendor side (FND-2616).
     procedure UnapplyAndReverseTransaction(EntryNo: Integer; TransactionNo: Integer)
+    var
+        CustLedgEntry: Record "Cust. Ledger Entry";
     begin
         if not UnapplyEntry(EntryNo) then
             ReverseTransaction(TransactionNo);
+
+        CustLedgEntry.Get(EntryNo);
+        CustLedgEntry."RTR Deleted At" := CurrentDateTime;
+        CustLedgEntry.Modify();
     end;
 }

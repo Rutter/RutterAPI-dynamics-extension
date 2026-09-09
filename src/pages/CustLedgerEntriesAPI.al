@@ -144,6 +144,61 @@ page 71692578 "RTR Cust. Ledger Entries API"
         end
     end;
 
+    // Reverses the entry's whole posting transaction — BC has no delete for a posted entry.
+    // Mirrors the vendor side (FND-2616) for customer payments (FND-2620).
+    //
+    // Call via:
+    //   POST .../customerLedgerEntries({systemId})/Microsoft.NAV.reverseTransaction
+    [ServiceEnabled]
+    procedure reverseTransaction(var ActionContext: WebServiceActionContext)
+    var
+        CustLedgEntryMgt: Codeunit "RTR Cust. Ledger Entry Mgt";
+    begin
+        CustLedgEntryMgt.ReverseTransaction(Rec."Transaction No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Cust. Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
+    // Unapplies the entry's open application, if any.
+    //
+    // Call via:
+    //   POST .../customerLedgerEntries({systemId})/Microsoft.NAV.unapplyEntry
+    [ServiceEnabled]
+    procedure unapplyEntry(var ActionContext: WebServiceActionContext)
+    var
+        CustLedgEntryMgt: Codeunit "RTR Cust. Ledger Entry Mgt";
+    begin
+        CustLedgEntryMgt.UnapplyEntry(Rec."Entry No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Cust. Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
+    // What a posted customer payment actually needs to be undone (unapply + reverse).
+    // A customer payment is always applied to an invoice, so plain reversal alone
+    // is rejected — unapply first when needed, the same composition the vendor
+    // side uses.
+    //
+    // Call via:
+    //   POST .../customerLedgerEntries({systemId})/Microsoft.NAV.unapplyAndReverseTransaction
+    [ServiceEnabled]
+    procedure unapplyAndReverseTransaction(var ActionContext: WebServiceActionContext)
+    var
+        CustLedgEntryMgt: Codeunit "RTR Cust. Ledger Entry Mgt";
+    begin
+        CustLedgEntryMgt.UnapplyAndReverseTransaction(Rec."Entry No.", Rec."Transaction No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"RTR Cust. Ledger Entries API");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
     var
         AccountId: Guid;
 }

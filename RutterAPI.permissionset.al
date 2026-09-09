@@ -24,7 +24,8 @@ permissionset 71692 "RTR Rutter API"
         page "RTR Tax Details Setup API" = X,
         codeunit "RTR Journal Line Mgt" = X,
         page "RTR Journal Batch Actions API" = X,
-        codeunit "RTR Vendor Ledger Entry Mgt" = X;
+        codeunit "RTR Vendor Ledger Entry Mgt" = X,
+        codeunit "RTR Cust. Ledger Entry Mgt" = X;
 }
 #else
 permissionset 71692575 "RTR Rutter API"
@@ -52,6 +53,7 @@ permissionset 71692575 "RTR Rutter API"
         page "RTR Tax Details Setup API" = X,
         codeunit "RTR Journal Line Mgt" = X,
         page "RTR Journal Batch Actions API" = X,
-        codeunit "RTR Vendor Ledger Entry Mgt" = X;
+        codeunit "RTR Vendor Ledger Entry Mgt" = X,
+        codeunit "RTR Cust. Ledger Entry Mgt" = X;
 }
 #endif

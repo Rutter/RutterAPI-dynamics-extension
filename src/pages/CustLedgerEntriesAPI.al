@@ -110,6 +110,18 @@ page 71692578 "RTR Cust. Ledger Entries API"
                 {
                     Caption = 'Open';
                 }
+                // Reversal state — Rutter's invoice_payment read model must
+                // exclude reversed payments: a DELETE reverses the posting,
+                // and without this flag the reversed entry would re-sync as a
+                // live payment on the next refresh (FND-2620).
+                field(reversed; Rec.Reversed)
+                {
+                    Caption = 'Reversed';
+                }
+                field(reversedByEntryNo; Rec."Reversed by Entry No.")
+                {
+                    Caption = 'Reversed by Entry No.';
+                }
                 field(remainingAmount; Rec."Remaining Amount")
                 {
                     Caption = 'Remaining Amount';

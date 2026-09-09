@@ -413,6 +413,16 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control remainingAmount - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 1877378184 - Control 3274398712 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Reversed</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control reversed - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 1877378184 - Control 54650822 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Reversed by Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Cust. Ledger Entries API - Control reversedByEntryNo - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 1877378184 - Control 2498656926 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Sales Cr. Memo Id</source>
           <note from="Developer" annotates="general" priority="2"></note>

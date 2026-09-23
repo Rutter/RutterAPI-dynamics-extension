@@ -61,6 +61,22 @@ page 71692592 "RTR Journal Batch Actions API"
         exit(JournalLineMgt.DeleteLines(Rec."Journal Template Name", Rec.Name, LineIdsJson));
     end;
 
+    // Creates a set of Gen. Journal Lines in this batch in a single atomic call, with the
+    // account, posting-group and tax-override fields applied in order before each Insert() —
+    // see JournalLineManagement.al. Returns the created lines' ids as a JSON array, in input
+    // order, so the caller can read the lines back off workflowGenJournalLines.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.createLines
+    //   Body: { "linesJson": "[{\"accountType\":\"G/L Account\",\"accountNumber\":\"10100\",\"amount\":25}]" }
+    [ServiceEnabled]
+    procedure createLines(LinesJson: Text): Text
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        exit(JournalLineMgt.CreateLines(Rec."Journal Template Name", Rec.Name, LinesJson));
+    end;
+
     // Posts only the given lines, not the whole batch — see JournalLineManagement.al.
     [ServiceEnabled]
     procedure postLines(LineIdsJson: Text): Integer

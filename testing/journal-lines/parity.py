@@ -95,36 +95,45 @@ def run(key):
     print(f"\n{'=' * 70}\n{cfg['label']}  —  batch GENERAL/{cfg['batch_name']}\n{'=' * 70}")
     client = Client(cfg)
     check_version(client)
-    fx = resolve(client)
     created, passed = [], True
 
-    print("\nparity shapes:")
-    for name, payload in shapes(cfg, fx):
-        try:
-            legacy_id = legacy_create(client, dict(payload))
-            created.append(legacy_id)
-            al_id = al_create(client, [dict(payload)])[0]
-            created.append(al_id)
-            passed &= diff(name, client.read(legacy_id), client.read(al_id), ACCEPTED)
-        except RuntimeError as e:
-            print(f"  ERROR {name}: {e}")
-            passed = False
+    # Whatever happens — a dropped connection, an expired token — the lines created so far
+    # must still be deleted, or the next run's failure-case counts compare against a dirty
+    # batch. An error here must also not take the other company down with it.
+    try:
+        fx = resolve(client)
 
-    print("\nbatch stress:")
-    ids, ok = bank_deposit_batch(client, cfg)
-    created += ids
-    passed &= ok
+        print("\nparity shapes:")
+        for name, payload in shapes(cfg, fx):
+            try:
+                legacy_id = legacy_create(client, dict(payload))
+                created.append(legacy_id)
+                al_id = al_create(client, [dict(payload)])[0]
+                created.append(al_id)
+                passed &= diff(name, client.read(legacy_id), client.read(al_id), ACCEPTED)
+            except RuntimeError as e:
+                print(f"  ERROR {name}: {e}")
+                passed = False
 
-    print("\nfailure cases:")
-    passed &= failure_cases(client, cfg, fx)
+        print("\nbatch stress:")
+        ids, ok = bank_deposit_batch(client, cfg)
+        created += ids
+        passed &= ok
 
-    if created:
-        print(f"\ncleanup: deleting {len(created)} lines")
-        try:
-            client.delete(created)
-        except RuntimeError as e:
-            print(f"  CLEANUP FAILED, lines left in {cfg['batch_name']}: {e}")
-            passed = False
+        print("\nfailure cases:")
+        passed &= failure_cases(client, cfg, fx)
+    except RuntimeError as e:
+        print(f"\nABORTED: {e}")
+        passed = False
+    finally:
+        if created:
+            print(f"\ncleanup: deleting {len(created)} lines")
+            try:
+                client.delete(created)
+            except RuntimeError as e:
+                print(f"  CLEANUP FAILED, {len(created)} lines left in {cfg['batch_name']}: {e}")
+                print("  delete them before the next run — see the skill's Traps section")
+                passed = False
     return passed
 
 

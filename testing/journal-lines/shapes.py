@@ -95,6 +95,19 @@ def shapes(cfg, fx):
              base_line(cfg, fx, amount=57.14, currencyCode=cfg["currency"],
                        RTRCurrencyFactorAPI=3.6725, vatProdPostingGroup=prod)),
         ]
+    # The two restore paths: validating Account No. pulls the account's VAT setup
+    # (Validate("VAT Prod. Posting Group") -> VAT %, VAT Amount, VAT Base Amount) and its
+    # default dimensions (CreateDimFromDefaultDim). The old accountId path did neither, so
+    # RestoreAccountDefaults has to put back whatever the caller did not send.
+    if cfg.get("vat_default_account"):
+        acct = cfg["vat_default_account"]
+        out.append(("account with VAT posting groups, none sent",
+                    base_line(cfg, fx, accountId=fx["gl_id"][acct], _accountNumber=acct)))
+    if cfg.get("dim_default_account"):
+        acct = cfg["dim_default_account"]
+        out.append(("account with default dimension, none sent",
+                    base_line(cfg, fx, accountId=fx["gl_id"][acct], _accountNumber=acct)))
+
     if cfg["tax"]:
         area, group = cfg["tax"]
         out.append(("sales tax (floatcard)",

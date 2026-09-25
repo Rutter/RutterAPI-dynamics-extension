@@ -1,2 +1,8 @@
 .alpackages
 .claude/settings.local.json
+
+# python bytecode from the testing/ scripts
+__pycache__/
+
+# personal, machine-specific paths and notes
+CLAUDE.local.md

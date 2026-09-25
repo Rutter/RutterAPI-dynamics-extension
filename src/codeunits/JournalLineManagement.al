@@ -5,6 +5,11 @@ codeunit 71692577 "RTR Journal Line Mgt"
 #endif
 {
 
+    var
+        // Set per line so the value helpers can name the offending line without every one of
+        // them taking an index they otherwise have no use for.
+        CurrentLineIndex: Integer;
+
     trigger OnRun()
     begin
     end;
@@ -161,6 +166,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         DateValue: Date;
         GuidValue: Guid;
     begin
+        CurrentLineIndex := LineIndex;
         GenJournalLine.Init();
         GenJournalLine."Journal Template Name" := JournalTemplateName;
         GenJournalLine."Journal Batch Name" := JournalBatchName;
@@ -194,8 +200,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if GetDate(LineObject, 'postingDate', DateValue, LineIndex) then
             GenJournalLine.Validate("Posting Date", DateValue);
 
-        // After the account (which overwrites it with the account name) but before the bal
-        // account (which overwrites it again) — page 6407's own order, which callers depend on.
+        // Page 6407's own position for it: after the account, whose validate overwrites
+        // Description with the account name.
         if GetText(LineObject, 'description', TextValue) then
             GenJournalLine.Validate(Description, CopyStr(TextValue, 1, MaxStrLen(GenJournalLine.Description)));
 
@@ -281,6 +287,21 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // line on Sales Tax where the OData path leaves it on Normal Tax.
         if not HasValue(LineObject, 'vatCalculationType') then
             GenJournalLine."VAT Calculation Type" := SnapshotLine."VAT Calculation Type";
+        // Account No. validate ends with Validate("VAT Prod. Posting Group"), which sets
+        // "VAT %" and then recomputes VAT Amount / VAT Base Amount from it. Restoring the
+        // group alone would leave the line calculating VAT at the account's rate.
+        if not HasValue(LineObject, 'vatPercent') then begin
+            GenJournalLine."VAT %" := SnapshotLine."VAT %";
+            GenJournalLine."VAT Amount" := SnapshotLine."VAT Amount";
+            GenJournalLine."VAT Base Amount" := SnapshotLine."VAT Base Amount";
+        end;
+        // ...and with CreateDimFromDefaultDim, which applies the account's default dimensions.
+        if not HasValue(LineObject, 'dimensionSetId') then
+            GenJournalLine."Dimension Set ID" := SnapshotLine."Dimension Set ID";
+        if not HasValue(LineObject, 'shortcutDimension1Code') then
+            GenJournalLine."Shortcut Dimension 1 Code" := SnapshotLine."Shortcut Dimension 1 Code";
+        if not HasValue(LineObject, 'shortcutDimension2Code') then
+            GenJournalLine."Shortcut Dimension 2 Code" := SnapshotLine."Shortcut Dimension 2 Code";
     end;
 
     local procedure HasValue(LineObject: JsonObject; FieldKey: Text): Boolean
@@ -375,7 +396,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                     FldRef.Validate(GuidValue);
                 end;
             FieldType::Option:
-                FldRef.Validate(OptionOrdinal(FldRef, ValueToken.AsValue().AsText(), FieldKey, LineIndex));
+                SetOptionField(FldRef, ValueToken.AsValue().AsText(), FieldKey, LineIndex);
             else
                 Error('Line %1: field "%2" has a type this endpoint cannot set.', LineIndex, FieldKey);
         end;
@@ -404,27 +425,43 @@ codeunit 71692577 "RTR Journal Line Mgt"
         exit(Normalized.Replace('NUMBER', 'NO'));
     end;
 
-    local procedure OptionOrdinal(FldRef: FieldRef; Value: Text; FieldKey: Text; LineIndex: Integer): Integer
+    // Setting an option/enum field through a FieldRef is where the ordinal trap lives: for an
+    // enum, position in OptionMembers is not the ordinal once the enum has gaps (Gen. Journal
+    // Account Type jumps 6 -> 10) or a localization adds values at 50000+. Let BC resolve the
+    // name itself first; fall back to the positional lookup only if it will not.
+    local procedure SetOptionField(var FldRef: FieldRef; Value: Text; FieldKey: Text; LineIndex: Integer)
     var
         Members: List of [Text];
         MemberList: Text;
         Member: Text;
         i: Integer;
     begin
+        if TryValidateByName(FldRef, Value.Trim()) then
+            exit;
+
         MemberList := FldRef.OptionMembers;
         Members := MemberList.Split(',');
         for i := 1 to Members.Count do begin
             Member := Members.Get(i);
-            if UpperCase(Member.Trim()) = UpperCase(Value.Trim()) then
-                exit(i - 1);
+            if UpperCase(Member.Trim()) = UpperCase(Value.Trim()) then begin
+                FldRef.Validate(i - 1);
+                exit;
+            end;
         end;
 
         Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, MemberList);
     end;
 
+    [TryFunction]
+    local procedure TryValidateByName(var FldRef: FieldRef; Value: Text)
+    begin
+        FldRef.Validate(Value);
+    end;
+
     local procedure IsHandledKey(FieldKey: Text): Boolean
     var
         HandledKeys: List of [Text];
+        Handled: Text;
     begin
         // journalTemplateName / journalBatchName are taken from the batch the action is bound to.
         HandledKeys.Add('journalTemplateName');
@@ -455,7 +492,14 @@ codeunit 71692577 "RTR Journal Line Mgt"
         HandledKeys.Add('customerId');
         HandledKeys.Add('RTRVATAmountAPI');
 
-        exit(HandledKeys.Contains(FieldKey));
+        // Compare normalized: ApplyExtraField matches field names ignoring case and
+        // punctuation, so an exact-case check here would let "AccountNumber" or "accountNo"
+        // slip past the ordered path and past RestoreAccountDefaults.
+        foreach Handled in HandledKeys do
+            if NormalizeFieldName(Handled) = NormalizeFieldName(FieldKey) then
+                exit(true);
+
+        exit(false);
     end;
 
     // Account number wins; an id is resolved to one so both take the same validated path.
@@ -684,7 +728,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             exit(false);
 
         if not ValueToken.IsValue() then
-            Error('Field "%1" must be a plain value.', FieldKey);
+            Error('Line %1: field "%2" must be a plain value.', CurrentLineIndex, FieldKey);
 
         exit(not ValueToken.AsValue().IsNull());
     end;

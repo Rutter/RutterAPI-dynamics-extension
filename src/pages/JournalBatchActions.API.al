@@ -41,6 +41,14 @@ page 71692592 "RTR Journal Batch Actions API"
                     Caption = 'Code';
                     Editable = false;
                 }
+                // Decides whether validating an account copies its VAT posting setup onto the
+                // line (Gen. Journal Line.CopyVATSetupToJnlLines reads it from the batch, not
+                // the template). Exposed read-only so tooling can see what a run is testing.
+                field(copyVATSetupToJnlLines; Rec."Copy VAT Setup to Jnl. Lines")
+                {
+                    Caption = 'Copy VAT Setup to Jnl. Lines';
+                    Editable = false;
+                }
             }
         }
     }

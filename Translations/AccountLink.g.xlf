@@ -483,6 +483,11 @@
           <note from="Developer" annotates="general" priority="2"></note>
           <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Control code - Property Caption</note>
         </trans-unit>
+        <trans-unit id="Page 588337104 - Control 396356681 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Copy VAT Setup to Jnl. Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page RTR Journal Batch Actions API - Control copyVATSetupToJnlLines - Property Caption</note>
+        </trans-unit>
         <trans-unit id="Page 588337104 - Control 2686962215 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
           <source>Id</source>
           <note from="Developer" annotates="general" priority="2"></note>

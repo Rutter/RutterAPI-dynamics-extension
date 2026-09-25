@@ -37,6 +37,18 @@ tableextension 71693 "RTR Cust. Ledger Entry" extends "Cust. Ledger Entry"
             Editable = false;
             DataClassification = CustomerContent;
         }
+        // Published to the blessed sandbox by 22.5.0.21 (FND-2620, PR #26, closed
+        // unmerged). BC refuses any upgrade that drops a published field, so it stays
+        // declared and unused until that tenant's extension data is deleted.
+        field(71755; "RTR Deleted At"; DateTime)
+        {
+            Caption = 'Deleted At';
+            Editable = false;
+            DataClassification = CustomerContent;
+            ObsoleteState = Pending;
+            ObsoleteReason = 'Unused: the FND-2620 delete-marker work was closed unmerged. Declared only to keep upgrades legal on tenants that installed 22.5.0.21.';
+            ObsoleteTag = '22.5.0.27';
+        }
     }
 }
 #else

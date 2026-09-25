@@ -41,6 +41,14 @@ page 71692592 "RTR Journal Batch Actions API"
                     Caption = 'Code';
                     Editable = false;
                 }
+                // Decides whether validating an account copies its VAT posting setup onto the
+                // line (Gen. Journal Line.CopyVATSetupToJnlLines reads it from the batch, not
+                // the template). Exposed read-only so tooling can see what a run is testing.
+                field(copyVATSetupToJnlLines; Rec."Copy VAT Setup to Jnl. Lines")
+                {
+                    Caption = 'Copy VAT Setup to Jnl. Lines';
+                    Editable = false;
+                }
             }
         }
     }
@@ -59,6 +67,22 @@ page 71692592 "RTR Journal Batch Actions API"
         JournalLineMgt: Codeunit "RTR Journal Line Mgt";
     begin
         exit(JournalLineMgt.DeleteLines(Rec."Journal Template Name", Rec.Name, LineIdsJson));
+    end;
+
+    // Creates a set of Gen. Journal Lines in this batch in a single atomic call, with the
+    // account, posting-group and tax-override fields applied in order before each Insert() —
+    // see JournalLineManagement.al. Returns the created lines' ids as a JSON array, in input
+    // order, so the caller can read the lines back off workflowGenJournalLines.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.createLines
+    //   Body: { "linesJson": "[{\"accountType\":\"G/L Account\",\"accountNumber\":\"10100\",\"amount\":25}]" }
+    [ServiceEnabled]
+    procedure createLines(LinesJson: Text): Text
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        exit(JournalLineMgt.CreateLines(Rec."Journal Template Name", Rec.Name, LinesJson));
     end;
 
     // Posts only the given lines, not the whole batch — see JournalLineManagement.al.

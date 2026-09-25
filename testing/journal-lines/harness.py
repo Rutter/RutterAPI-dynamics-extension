@@ -32,6 +32,11 @@ CONFIG = {
         "currency": "EUR",
         "tax": ("MIAMI, FL", "FURNITURE"),
         "vat": None,
+        # Accounts carrying defaults, to exercise RestoreAccountDefaults. 60160 already had
+        # VAT Bus./Prod. HST/REDUCED in the demo data; no account on this company has default
+        # dimensions, so that shape is UAE-only. All 264 posting accounts were probed.
+        "vat_default_account": "60160",
+        "dim_default_account": None,
     },
     "uae": {
         "label": "CRONUS UAE 2 (taxes_test)",
@@ -49,6 +54,11 @@ CONFIG = {
         "currency": "AED",
         "tax": None,
         "vat": ("DOMESTIC", "VAT5"),
+        # 60120 carries VAT Bus./Prod. Posting Group DOMESTIC/VAT5, 62120 a DEPARTMENT=ADM
+        # default dimension. Nothing else on either company has defaults — all 229 posting
+        # accounts were probed — so without these two the restore paths never execute.
+        "vat_default_account": "60120",
+        "dim_default_account": "62120",
     },
 }
 
@@ -175,11 +185,15 @@ def check_version(client):
 def resolve(client):
     """Look up the ids the legacy path needs (it posts accountId, not a number)."""
     cfg, fx = client.cfg, {}
+    wanted = list(cfg["gl"])
+    for key in ("vat_default_account", "dim_default_account"):
+        if cfg.get(key):
+            wanted.append(cfg[key])
     accounts = client.call("GET", urllib.parse.quote(
-        f"{client.std}/accounts?$filter=" + " or ".join(f"number eq '{n}'" for n in cfg["gl"]),
+        f"{client.std}/accounts?$filter=" + " or ".join(f"number eq '{n}'" for n in wanted),
         safe=":/?&=$'"))["value"]
     fx["gl_id"] = {a["number"]: a["id"] for a in accounts}
-    missing = [n for n in cfg["gl"] if n not in fx["gl_id"]]
+    missing = [n for n in wanted if n not in fx["gl_id"]]
     if missing:
         sys.exit(f"{cfg['label']}: G/L account(s) {missing} not found")
     banks = client.call("GET", urllib.parse.quote(

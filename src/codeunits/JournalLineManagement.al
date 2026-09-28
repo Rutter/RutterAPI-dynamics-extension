@@ -121,7 +121,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
         foreach LineToken in LinesArray do begin
             LineIndex += 1;
             CreateSingleLine(JournalTemplateName, JournalBatchName, LineToken.AsObject(), LineIndex, GenJournalLine);
-            CreatedIds.Add(Format(GenJournalLine.SystemId, 0, 4));
+            // Lowercased to match what BC's own endpoints return, so callers can compare
+            // these ids against page data without normalizing first.
+            CreatedIds.Add(LowerCase(Format(GenJournalLine.SystemId, 0, 4)));
         end;
 
         CreatedIds.WriteTo(CreatedIdsJson);
@@ -219,6 +221,13 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // it PATCHes the posting groups separately today.
         if GetText(LineObject, 'genPostingType', TextValue) then
             GenJournalLine.Validate("Gen. Posting Type", ParseGenPostingType(TextValue, LineIndex));
+        // Before VAT Prod.: validating Gen. Prod. Posting Group resets it to the group's default.
+        if GetText(LineObject, 'genBusPostingGroup', TextValue) then
+            GenJournalLine.Validate("Gen. Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Gen. Bus. Posting Group")));
+        if GetText(LineObject, 'genProdPostingGroup', TextValue) then
+            GenJournalLine.Validate("Gen. Prod. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Gen. Prod. Posting Group")));
+        if GetText(LineObject, 'vatBusPostingGroup', TextValue) then
+            GenJournalLine.Validate("VAT Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."VAT Bus. Posting Group")));
         if GetText(LineObject, 'RTRVatBusPostingGroupAPI', TextValue) then
             GenJournalLine.Validate("VAT Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."VAT Bus. Posting Group")));
         if GetText(LineObject, 'vatProdPostingGroup', TextValue) then
@@ -265,6 +274,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
     // ask for — a line must not silently inherit a tax treatment nobody sent.
     local procedure RestoreAccountDefaults(var GenJournalLine: Record "Gen. Journal Line"; SnapshotLine: Record "Gen. Journal Line"; LineObject: JsonObject)
     begin
+        // Validating Account No. fills a blank description with the account name.
+        if not HasValue(LineObject, 'description') then
+            GenJournalLine.Description := SnapshotLine.Description;
         if not HasValue(LineObject, 'genPostingType') then
             GenJournalLine."Gen. Posting Type" := SnapshotLine."Gen. Posting Type";
         if not HasValue(LineObject, 'genBusPostingGroup') then
@@ -479,6 +491,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
         HandledKeys.Add('currencyCode');
         HandledKeys.Add('RTRCurrencyFactorAPI');
         HandledKeys.Add('genPostingType');
+        HandledKeys.Add('genBusPostingGroup');
+        HandledKeys.Add('genProdPostingGroup');
+        HandledKeys.Add('vatBusPostingGroup');
         HandledKeys.Add('vatProdPostingGroup');
         HandledKeys.Add('RTRVatBusPostingGroupAPI');
         HandledKeys.Add('RTRVatProdPostingGroupAPI');

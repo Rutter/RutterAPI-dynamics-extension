@@ -194,7 +194,13 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if TextValue <> '' then begin
             SnapshotLine := GenJournalLine;
             GenJournalLine.Validate("Account No.", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Account No.")));
-            RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
+            // Only when the caller identified the account by id. The OData path assigns
+            // Account No. through "Account Id" without validating it, so those lines never
+            // picked up the account's defaults; a caller sending a number got them, because
+            // BC validates a number. Restoring on both paths would strip defaults from lines
+            // that have always had them.
+            if not HasValue(LineObject, 'accountNumber') then
+                RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
         end;
 
         // After the account, never before: Due Date is derived here, and validating an account
@@ -268,10 +274,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
         GenJournalLine.Insert(true);
     end;
 
-    // Validating Account No. copies the account's posting and tax defaults onto the line (see
-    // GetGLAccount in GenJournalLine.Table.al). The OData path sets Account No. through
-    // "Account Id", a raw assign that skips all of it, so put back anything the caller did not
-    // ask for — a line must not silently inherit a tax treatment nobody sent.
+    // Puts back what validating Account No. copied off the account (see GetGLAccount in
+    // GenJournalLine.Table.al). Only called for id-identified accounts — see the call site.
     local procedure RestoreAccountDefaults(var GenJournalLine: Record "Gen. Journal Line"; SnapshotLine: Record "Gen. Journal Line"; LineObject: JsonObject)
     begin
         // Validating Account No. fills a blank description with the account name.
@@ -314,6 +318,14 @@ codeunit 71692577 "RTR Journal Line Mgt"
             GenJournalLine."Shortcut Dimension 1 Code" := SnapshotLine."Shortcut Dimension 1 Code";
         if not HasValue(LineObject, 'shortcutDimension2Code') then
             GenJournalLine."Shortcut Dimension 2 Code" := SnapshotLine."Shortcut Dimension 2 Code";
+        // GetGLAccount takes Currency Code from the account's Source Currency Code. Left in
+        // place it converts the line: a 700 line against an AED account posted 163.63 to the
+        // ledger. Amount is validated later, so restoring the factor here is enough for the
+        // LCY amounts to come out right.
+        if not HasValue(LineObject, 'currencyCode') then begin
+            GenJournalLine."Currency Code" := SnapshotLine."Currency Code";
+            GenJournalLine."Currency Factor" := SnapshotLine."Currency Factor";
+        end;
     end;
 
     local procedure HasValue(LineObject: JsonObject; FieldKey: Text): Boolean
@@ -323,9 +335,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
         exit(GetValueToken(LineObject, FieldKey, ValueToken));
     end;
 
-    // Anything the explicit list above doesn't cover is applied by name against the table's own
-    // fields, so callers keep the open-ended field access page 6407 gives them. Page 6407 is a
-    // plain field-binding page with no triggers of its own, so a FieldRef.Validate matches it.
+    // Anything the explicit list above doesn't cover is applied by name, limited to the fields
+    // page 6407 exposes. That page is a plain field-binding page with no triggers of its own,
+    // so a FieldRef.Validate reproduces it.
     local procedure ApplyExtraFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
     var
         RecRef: RecordRef;
@@ -353,10 +365,21 @@ codeunit 71692577 "RTR Journal Line Mgt"
     var
         FldRef: FieldRef;
         TargetName: Text;
+        Canonical: Text;
         i: Integer;
     begin
         if not ValueToken.IsValue() then
             Error('Line %1: field "%2" is not supported by this endpoint.', LineIndex, FieldKey);
+
+        // The ordered path reads its keys by exact spelling. A key that only resembles one of
+        // them would otherwise be silently dropped — creating a line with no account, or no
+        // tax override — so say which spelling to use instead.
+        Canonical := CanonicalHandledKey(FieldKey);
+        if Canonical <> '' then
+            Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
+
+        if not IsExposedField(FieldKey) then
+            Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
 
         TargetName := NormalizeFieldName(FieldKey);
 
@@ -416,6 +439,81 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
     // OData property names and BC field names differ in fixed ways ("Account No." is exposed as
     // accountNumber, "VAT %" as vatPercent), so both sides are folded to the same shape.
+    // The pass-through used to match any field on Gen. Journal Line, which is wider than the
+    // OData page it replaces — a caller could set System-Created Entry or Check Printed. This
+    // is page 6407's field list, generated from its source, and the pass-through is limited to
+    // it so callers keep exactly the access they had, no more.
+    // Empty unless the key resembles a handled one, in which case the exact spelling to use.
+    local procedure CanonicalHandledKey(FieldKey: Text): Text
+    var
+        HandledKeys: List of [Text];
+        Handled: Text;
+    begin
+        HandledKeys := HandledKeyList();
+        foreach Handled in HandledKeys do
+            if NormalizeFieldName(Handled) = NormalizeFieldName(FieldKey) then
+                exit(Handled);
+
+        exit('');
+    end;
+
+    local procedure IsExposedField(FieldKey: Text): Boolean
+    var
+        Exposed: List of [Text];
+        Name: Text;
+    begin
+        Exposed := ExposedFieldNames().Split(',');
+        foreach Name in Exposed do
+            if NormalizeFieldName(Name) = NormalizeFieldName(FieldKey) then
+                exit(true);
+
+        exit(false);
+    end;
+
+    local procedure ExposedFieldNames(): Text
+    var
+        Names: Text;
+    begin
+        Names += 'accountId,accountNumber,accountType,additionalCurrencyPosting,allocatedAmtLcy,';
+        Names += 'allowApplication,allowZeroAmountPosting,amount,amountLcy,appliedAutomatically,';
+        Names += 'appliesToDocNumber,appliesToDocType,appliesToExtDocNumber,appliesToId,';
+        Names += 'appliesToInvoiceId,balAccountNumber,balAccountType,balanceLcy,balGenBusPostingGroup,';
+        Names += 'balGenPostingType,balGenProdPostingGroup,balTaxAreaCode,balTaxGroupCode,balTaxLiable,';
+        Names += 'balUseTax,balVatAmount,balVatAmountLcy,balVatBaseAmount,balVatBaseAmountLcy,';
+        Names += 'balVatBusPostingGroup,balVatCalculationType,balVatDifference,balVatPercent,';
+        Names += 'balVatProdPostingGroup,bankPaymentType,billToPayToNumber,budgetedFaNumber,';
+        Names += 'businessUnitCode,campaignNumber,checkExported,checkPrinted,checkTransmitted,comment,';
+        Names += 'contactGraphId,correction,countryRegionCode,creditAmount,creditorNumber,currencyCode,';
+        Names += 'currencyFactor,customerId,dataExchEntryNumber,dataExchLineNumber,debitAmount,';
+        Names += 'deferralCode,deferralLineNumber,deprAcquisitionCost,depreciationBookCode,';
+        Names += 'deprUntilFaPostingDate,description,dimensionSetId,directDebitMandateId,documentDate,';
+        Names += 'documentNumber,documentType,dueDate,duplicateInDepreciationBook,eu3PartyTrade,';
+        Names += 'expirationDate,exportedToPaymentFile,externalDocumentNumber,faAddCurrencyFactor,';
+        Names += 'faErrorEntryNumber,faPostingDate,faPostingType,faReclassificationEntry,financialVoid,';
+        Names += 'genBusPostingGroup,genPostingType,genProdPostingGroup,hasPaymentExportError,icAccountNo,';
+        Names += 'icAccountType,icDirection,icPartnerCode,icPartnerTransactionNumber,id,';
+        Names += 'incomingDocumentEntryNumber,indexEntry,insuranceNumber,invDiscountLcy,jobCurrencyCode,';
+        Names += 'jobCurrencyFactor,jobLineAmount,jobLineAmountLcy,jobLineDiscAmountLcy,';
+        Names += 'jobLineDiscountAmount,jobLineDiscountPercent,jobLineType,jobNumber,';
+        Names += 'jobPlanningLineNumber,jobQuantity,jobRemainingQty,jobTaskNumber,jobTotalCost,';
+        Names += 'jobTotalCostLcy,jobTotalPrice,jobTotalPriceLcy,jobUnitCost,jobUnitCostLcy,';
+        Names += 'jobUnitOfMeasureCode,jobUnitPrice,jobUnitPriceLcy,journalBatchId,journalBatchName,';
+        Names += 'journalTemplateName,lastModifiedDatetime,lineNumber,maintenanceCode,messageToRecipient,';
+        Names += 'numberOfDepreciationDays,onHold,payerInformation,paymentDiscountPercent,';
+        Names += 'paymentMethodCode,paymentReference,paymentTermsCode,pmtDiscountDate,postingDate,';
+        Names += 'postingGroup,postingNumberSeries,prepayment,prodOrderNumber,profitLcy,quantity,';
+        Names += 'reasonCode,recipientBankAccount,recurringFrequency,recurringMethod,reversingEntry,';
+        Names += 'salespersPurchCode,salesPurchLcy,salvageValue,sellToBuyFromNumber,';
+        Names += 'shipToOrderAddressCode,shortcutDimension1Code,shortcutDimension2Code,sourceCode,';
+        Names += 'sourceCurrencyAmount,sourceCurrencyCode,sourceCurrVatAmount,sourceCurrVatBaseAmount,';
+        Names += 'sourceLineNumber,sourceNumber,sourceType,systemCreatedEntry,taxAreaCode,taxGroupCode,';
+        Names += 'taxLiable,transactionInformation,useDuplicationList,useTax,vatAmount,vatAmountLcy,';
+        Names += 'vatBaseAmount,vatBaseAmountLcy,vatBaseDiscountPercent,vatBusPostingGroup,';
+        Names += 'vatCalculationType,vatDifference,vatPercent,vatPosting,vatProdPostingGroup,';
+        Names += 'vatRegistrationNumber';
+        exit(Names);
+    end;
+
     local procedure NormalizeFieldName(Value: Text) Normalized: Text
     var
         Builder: TextBuilder;
@@ -470,10 +568,17 @@ codeunit 71692577 "RTR Journal Line Mgt"
         FldRef.Validate(Value);
     end;
 
+    // The exact spelling of a key the ordered path consumes. A near miss is rejected rather
+    // than passed through — see CanonicalHandledKey.
     local procedure IsHandledKey(FieldKey: Text): Boolean
     var
         HandledKeys: List of [Text];
-        Handled: Text;
+    begin
+        HandledKeys := HandledKeyList();
+        exit(HandledKeys.Contains(FieldKey));
+    end;
+
+    local procedure HandledKeyList() HandledKeys: List of [Text]
     begin
         // journalTemplateName / journalBatchName are taken from the batch the action is bound to.
         HandledKeys.Add('journalTemplateName');
@@ -506,15 +611,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
         HandledKeys.Add('sourceType');
         HandledKeys.Add('customerId');
         HandledKeys.Add('RTRVATAmountAPI');
-
-        // Compare normalized: ApplyExtraField matches field names ignoring case and
-        // punctuation, so an exact-case check here would let "AccountNumber" or "accountNo"
-        // slip past the ordered path and past RestoreAccountDefaults.
-        foreach Handled in HandledKeys do
-            if NormalizeFieldName(Handled) = NormalizeFieldName(FieldKey) then
-                exit(true);
-
-        exit(false);
     end;
 
     // Account number wins; an id is resolved to one so both take the same validated path.

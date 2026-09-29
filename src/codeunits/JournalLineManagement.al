@@ -201,6 +201,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
             // that have always had them.
             if not HasValue(LineObject, 'accountNumber') then
                 RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
+            // Both paths: the backend's number PATCH resends the description, so it never kept the account name.
+            if not HasValue(LineObject, 'description') then
+                GenJournalLine.Description := SnapshotLine.Description;
         end;
 
         // After the account, never before: Due Date is derived here, and validating an account
@@ -278,9 +281,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
     // GenJournalLine.Table.al). Only called for id-identified accounts — see the call site.
     local procedure RestoreAccountDefaults(var GenJournalLine: Record "Gen. Journal Line"; SnapshotLine: Record "Gen. Journal Line"; LineObject: JsonObject)
     begin
-        // Validating Account No. fills a blank description with the account name.
-        if not HasValue(LineObject, 'description') then
-            GenJournalLine.Description := SnapshotLine.Description;
         if not HasValue(LineObject, 'genPostingType') then
             GenJournalLine."Gen. Posting Type" := SnapshotLine."Gen. Posting Type";
         if not HasValue(LineObject, 'genBusPostingGroup') then

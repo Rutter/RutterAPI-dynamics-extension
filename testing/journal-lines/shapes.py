@@ -48,7 +48,6 @@ def base_line(cfg, fx, **over):
         "description": "Expense | Reference ID: parity | Memo: harness",
         "accountType": "G/L Account",
         "accountId": fx["gl_id"][gl],
-        "_accountNumber": gl,
         "amount": 700.0,
     }
     p.update(over)
@@ -62,12 +61,12 @@ def shapes(cfg, fx):
     out = [
         ("expense pair: debit", base_line(cfg, fx)),
         ("expense pair: credit", base_line(cfg, fx, amount=-700.0,
-                                           accountId=fx["gl_id"][gl2], _accountNumber=gl2)),
+                                           accountId=fx["gl_id"][gl2])),
         ("lowercase accountType (Alternative Payments)",
          base_line(cfg, fx, accountType="G/L account")),
         ("bank line, two-step PATCH case",
          base_line(cfg, fx, accountType="Bank Account", accountId=fx["bank_gl_id"],
-                   _accountNumber=None, _bankAccountNumber=cfg["bank"])),
+                   _bankAccountNumber=cfg["bank"])),
         ("linked payment line (sourceType)",
          base_line(cfg, fx, amount=-234.47, sourceType="Bank Account",
                    accountType="G/L account",
@@ -106,11 +105,25 @@ def shapes(cfg, fx):
     if cfg.get("vat_default_account"):
         acct = cfg["vat_default_account"]
         out.append(("account with VAT posting groups, none sent",
-                    base_line(cfg, fx, accountId=fx["gl_id"][acct], _accountNumber=acct)))
+                    base_line(cfg, fx, accountId=fx["gl_id"][acct])))
     if cfg.get("dim_default_account"):
         acct = cfg["dim_default_account"]
         out.append(("account with default dimension, none sent",
-                    base_line(cfg, fx, accountId=fx["gl_id"][acct], _accountNumber=acct)))
+                    base_line(cfg, fx, accountId=fx["gl_id"][acct])))
+        # The other side of the same rule: identified by number, the account's defaults are
+        # BC's to apply and must survive on both paths.
+        out.append(("account with default dimension, sent by number",
+                    base_line(cfg, fx, accountId=None, accountNumber=acct)))
+        out.append(("bank account with default dimension, sent by number",
+                    base_line(cfg, fx, accountId=None, accountType="Bank Account",
+                              accountNumber=cfg["bank"])))
+
+    # An account with a source currency converts the line when its number is validated: a 700
+    # line against an AED account posted 163.63 to the ledger before the currency restore.
+    if cfg.get("source_currency_account"):
+        acct = cfg["source_currency_account"]
+        out.append(("account with a source currency, none sent",
+                    base_line(cfg, fx, accountId=fx["gl_id"][acct])))
 
     if cfg["tax"]:
         area, group = cfg["tax"]
@@ -148,5 +161,5 @@ def failure_payloads(cfg, fx):
          [base_line(cfg, fx, dimensionSetLines=[{"classId": "x", "template": {"code": "DEPT"}}])]),
         ("mid-batch failure rolls back",
          [base_line(cfg, fx), base_line(cfg, fx),
-          base_line(cfg, fx, accountId=None, _accountNumber="NOPE")]),
+          base_line(cfg, fx, accountId=None, accountNumber="NOPE")]),
     ]

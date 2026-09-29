@@ -53,15 +53,21 @@ def legacy_create(client, p, created):
 
 
 def al_create(client, payloads):
-    """One createLines call. Account numbers win over ids, as the swap will send them."""
+    """One createLines call, sending the account exactly as the shape declares it.
+
+    Whether the account arrives as an id or a number is not cosmetic: the AL block restores
+    the account's defaults only for ids, mirroring the old path, where only a validated
+    number picked them up. A shape that sent an id one way and a number the other would be
+    comparing two different behaviours. The one exception is a bank line, which the backend
+    creates by id and then patches to the bank number — the AL block does it in one go.
+    """
     body = []
     for p in payloads:
         b = {k: v for k, v in p.items() if not k.startswith("_")}
         b["lineNumber"] = line_no()      # same batch: cannot reuse the legacy line's
-        number = p.get("_bankAccountNumber") or p.get("_accountNumber")
-        if number:
+        if p.get("_bankAccountNumber"):
             b.pop("accountId", None)
-            b["accountNumber"] = number
+            b["accountNumber"] = p["_bankAccountNumber"]
         if p.get("_balBankAccountNumber"):
             b["balAccountNumber"] = p["_balBankAccountNumber"]
         body.append(b)

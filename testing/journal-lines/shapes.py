@@ -73,6 +73,10 @@ def shapes(cfg, fx):
                    accountType="G/L account",
                    description="INVOICE_PAYMENT:37c59bd0-2eb3-f111-aaa8-000d3a4d7296")),
         ("bal account pair", base_line(cfg, fx, balAccountType="G/L Account", balAccountNumber=gl2)),
+        # The balancing side can be a bank account too, and the old path patches it separately
+        # for the same reason it patches the account side.
+        ("bal account is a bank",
+         base_line(cfg, fx, balAccountType="Bank Account", _balBankAccountNumber=cfg["bank"])),
         ("custom field passthrough", base_line(cfg, fx, onHold="RTR")),
     ]
     if cfg["currency"]:

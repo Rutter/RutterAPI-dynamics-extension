@@ -2,7 +2,7 @@
 name: journal-line-parity
 description: Run the journal-line parity suite against both sandbox companies to verify a journal-line AL block behaves exactly like the endpoint it replaces. MANDATORY after any change to the RTR Journal Line Mgt codeunit. Use when testing or verifying CreateLines / DeleteLines / PostLines, after building and installing a new AccountLink version, or when asked whether a journal-line change is safe to ship.
 argument-hint: "[usa|uae|both]"
-allowed-tools: Bash(python3 *) Bash(curl *) Bash(yarn *) Bash(pkill *) Bash(ps *) Read Glob Grep
+allowed-tools: Bash(python3 testing/journal-lines/*) Bash(curl -s -m * http://localhost:*) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
 ---
 
 # Journal-line parity suite
@@ -148,7 +148,8 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
   GET {odata}/workflowGenJournalLines?$filter=journalBatchName eq 'DEFAULT' and journalTemplateName eq 'GENERAL'
   ```
 - **`pkill -f "yarn dev:web"` leaves the `ts-node src/index.ts` child holding the port.** Kill
-  that pid too, and confirm with `curl localhost:$PORT/health`.
+  that pid too, and confirm with `curl localhost:$PORT/health`. Stopping the server is not in
+  this skill's allowed tools — ask before killing processes.
 
 ## Extending it
 

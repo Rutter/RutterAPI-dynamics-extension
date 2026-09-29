@@ -79,6 +79,10 @@ def load_token(cfg):
             d = json.loads(r.read())
         d = d.get("data", d)
         token = (d.get("platform") or {}).get("access_token", "")
+    except urllib.error.HTTPError as e:
+        sys.exit(f"admin-ops returned HTTP {e.code} for item {item}.\n"
+                 f"The dev server is up, so this is the request: check the item exists in the "
+                 f"local DB and its credential is valid. Body: {e.read().decode()[:200]}")
     except Exception as e:
         sys.exit(f"could not reach the admin-ops endpoint on port {port} ({type(e).__name__}).\n"
                  f"Start rutter-backend's dev server (yarn dev:web) and retry. If it runs on "

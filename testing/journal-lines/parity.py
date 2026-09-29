@@ -21,17 +21,27 @@ from shapes import ACCEPTED, bank_deposit_lines, failure_payloads, shapes
 OVERRIDE_FIELDS = ("RTRVATAmountAPI", "RTRVatBusPostingGroupAPI", "RTRVatProdPostingGroupAPI")
 
 
-def legacy_create(client, p):
-    """What createJournalLines.ts does today: POST, then the follow-up PATCHes."""
+def legacy_create(client, p, created):
+    """What createJournalLines.ts does today: POST, then the follow-up PATCHes.
+
+    `created` is appended to as soon as the line exists — a PATCH below can fail, and the
+    line still has to be cleaned up.
+    """
     body = {k: v for k, v in p.items()
             if not k.startswith("_") and k not in OVERRIDE_FIELDS}
     line = client.call("POST", f"{client.odata}/workflowGenJournalLines", body)
+    created.append(line["id"])
 
+    # Both sides, as updateJournalLinesWithBankAccountNumber does. Description is re-sent
+    # because validating a bank account overwrites it.
+    patch = {}
     if p.get("_bankAccountNumber"):
-        # description is re-sent because validating the bank account mangles it
-        line = client.call("PATCH", f"{client.odata}/workflowGenJournalLines({line['id']})",
-                           {"accountNumber": p["_bankAccountNumber"],
-                            "description": line["description"]})
+        patch["accountNumber"] = p["_bankAccountNumber"]
+    if p.get("_balBankAccountNumber"):
+        patch["balAccountNumber"] = p["_balBankAccountNumber"]
+    if patch:
+        patch["description"] = line["description"]
+        line = client.call("PATCH", f"{client.odata}/workflowGenJournalLines({line['id']})", patch)
 
     groups = {k: p[k] for k in OVERRIDE_FIELDS[1:] if k in p}
     if groups:
@@ -52,6 +62,8 @@ def al_create(client, payloads):
         if number:
             b.pop("accountId", None)
             b["accountNumber"] = number
+        if p.get("_balBankAccountNumber"):
+            b["balAccountNumber"] = p["_balBankAccountNumber"]
         body.append(b)
     return json.loads(client.action("createLines", {"linesJson": json.dumps(body)})["value"])
 
@@ -69,12 +81,12 @@ def bank_deposit_batch(client, cfg):
     return ids, ok
 
 
-def failure_cases(client, cfg, fx):
+def failure_cases(client, cfg, fx, created):
     ok = True
     for name, payload in failure_payloads(cfg, fx):
         before = client.count_lines()
         try:
-            al_create(client, payload)
+            created += al_create(client, payload)   # unexpected, but still ours to delete
             print(f"  FAIL  {name}: call succeeded, expected an error")
             ok = False
         except RuntimeError as e:
@@ -93,21 +105,23 @@ def failure_cases(client, cfg, fx):
 def run(key):
     cfg = CONFIG[key]
     print(f"\n{'=' * 70}\n{cfg['label']}  —  batch GENERAL/{cfg['batch_name']}\n{'=' * 70}")
-    client = Client(cfg)
-    check_version(client)
     created, passed = [], True
+    client = None
 
     # Whatever happens — a dropped connection, an expired token — the lines created so far
     # must still be deleted, or the next run's failure-case counts compare against a dirty
     # batch. An error here must also not take the other company down with it.
     try:
+        # Setup calls sys.exit on a missing fixture or a stale build. Catching SystemExit
+        # turns that into a failed result for this company rather than skipping the next one.
+        client = Client(cfg)
+        check_version(client)
         fx = resolve(client)
 
         print("\nparity shapes:")
         for name, payload in shapes(cfg, fx):
             try:
-                legacy_id = legacy_create(client, dict(payload))
-                created.append(legacy_id)
+                legacy_id = legacy_create(client, dict(payload), created)
                 al_id = al_create(client, [dict(payload)])[0]
                 created.append(al_id)
                 passed &= diff(name, client.read(legacy_id), client.read(al_id), ACCEPTED)
@@ -121,12 +135,12 @@ def run(key):
         passed &= ok
 
         print("\nfailure cases:")
-        passed &= failure_cases(client, cfg, fx)
-    except RuntimeError as e:
+        passed &= failure_cases(client, cfg, fx, created)
+    except (RuntimeError, SystemExit) as e:
         print(f"\nABORTED: {e}")
         passed = False
     finally:
-        if created:
+        if created and client:
             print(f"\ncleanup: deleting {len(created)} lines")
             try:
                 client.delete(created)

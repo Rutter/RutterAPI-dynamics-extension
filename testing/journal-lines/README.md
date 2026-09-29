@@ -10,7 +10,7 @@ python3 testing/journal-lines/parity.py both     # or: usa | uae
 
 **Mandatory after any change to `src/codeunits/JournalLineManagement.al`**, on both companies.
 
-Prerequisites, how to read the output, the two sandbox tenants (and the ones never to touch),
+Prerequisites, how to read the output, the declared test connections (and the rule that nothing else may be used),
 the accepted differences, and the traps are all in
 [`.claude/skills/journal-line-parity/SKILL.md`](../../.claude/skills/journal-line-parity/SKILL.md).
 Read that before running — the short version is: the build must already be installed on both

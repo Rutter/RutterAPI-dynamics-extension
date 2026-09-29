@@ -5,15 +5,21 @@ Everything here is operation-agnostic: the two sandbox companies, the HTTP clien
 lookup, the field-by-field diff and cleanup. A suite for a specific AL block (see parity.py
 for CreateLines) imports this and supplies only its own "old way" / "new way" pair.
 """
-import builtins, functools, json, os, sys, urllib.error, urllib.parse, urllib.request, uuid
+import builtins, functools, json, os, socket, sys, urllib.error, urllib.parse, urllib.request, uuid
 
 print = functools.partial(builtins.print, flush=True)
+
+# This machine advertises IPv6 but has no route, so a call that resolves to an AAAA record
+# dies with Errno 101 — randomly, mid-run, on whichever shape drew the short straw. Resolve
+# BC over IPv4 only.
+_getaddrinfo = socket.getaddrinfo
+socket.getaddrinfo = lambda *a, **kw: [r for r in _getaddrinfo(*a, **kw) if r[0] == socket.AF_INET]
 
 BASE = "https://api.businesscentral.dynamics.com/v2.0"
 
 # Refuse to test a build older than this. Bump it when a new block ships; a stale extension
 # otherwise reports green against code that isn't there.
-MIN_EXTENSION_VERSION = (22, 5, 0, 29)
+MIN_EXTENSION_VERSION = (22, 5, 0, 32)
 
 # The declared test connections — the only ones this suite may ever touch. Adding an entry
 # here is the act of declaring a connection safe to write to; anything not listed is assumed
@@ -37,6 +43,7 @@ CONFIG = {
         # dimensions, so that shape is UAE-only. All 264 posting accounts were probed.
         "vat_default_account": "60160",
         "dim_default_account": None,
+        "source_currency_account": None,
     },
     "uae": {
         "label": "CRONUS UAE 2 (taxes_test)",
@@ -59,6 +66,8 @@ CONFIG = {
         # accounts were probed — so without these two the restore paths never execute.
         "vat_default_account": "60120",
         "dim_default_account": "62120",
+        # 21100 has Source Currency Posting = Same Currency, Source Currency Code = AED.
+        "source_currency_account": "21100",
     },
 }
 
@@ -142,7 +151,7 @@ class Client:
         if method == "PATCH":
             req.add_header("If-Match", "*")
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=180) as r:
                 raw = r.read()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
@@ -190,7 +199,7 @@ def resolve(client):
     """Look up the ids the legacy path needs (it posts accountId, not a number)."""
     cfg, fx = client.cfg, {}
     wanted = list(cfg["gl"])
-    for key in ("vat_default_account", "dim_default_account"):
+    for key in ("vat_default_account", "dim_default_account", "source_currency_account"):
         if cfg.get(key):
             wanted.append(cfg[key])
     accounts = client.call("GET", urllib.parse.quote(

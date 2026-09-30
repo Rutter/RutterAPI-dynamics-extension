@@ -363,10 +363,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
     local procedure ApplyExtraField(var RecRef: RecordRef; FieldKey: Text; ValueToken: JsonToken; LineIndex: Integer)
     var
+        PageControlField: Record "Page Control Field";
         FldRef: FieldRef;
-        TargetName: Text;
         Canonical: Text;
-        i: Integer;
     begin
         if not ValueToken.IsValue() then
             Error('Line %1: field "%2" is not supported by this endpoint.', LineIndex, FieldKey);
@@ -378,20 +377,27 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if Canonical <> '' then
             Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
 
-        if not IsExposedField(FieldKey) then
+        // Same fields the OData page accepts, including page extensions installed on this tenant.
+        if not FindPageControl(FieldKey, PageControlField) then
             Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
 
-        TargetName := NormalizeFieldName(FieldKey);
+        if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
+            Error('Line %1: field "%2" is a page field with no journal line field behind it, so createLines cannot set it.', LineIndex, FieldKey);
 
-        for i := 1 to RecRef.FieldCount do begin
-            FldRef := RecRef.FieldIndex(i);
-            if NormalizeFieldName(FldRef.Name) = TargetName then begin
-                SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
-                exit;
-            end;
-        end;
+        FldRef := RecRef.Field(PageControlField.FieldNo);
+        SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
+    end;
 
-        Error('Line %1: unknown field "%2".', LineIndex, FieldKey);
+    local procedure FindPageControl(FieldKey: Text; var PageControlField: Record "Page Control Field"): Boolean
+    begin
+        PageControlField.SetRange(PageNo, Page::"Gen. Journal Line Entity");
+        if PageControlField.FindSet() then
+            repeat
+                if NormalizeFieldName(PageControlField.ControlName) = NormalizeFieldName(FieldKey) then
+                    exit(true);
+            until PageControlField.Next() = 0;
+
+        exit(false);
     end;
 
     local procedure SetFieldFromJson(var FldRef: FieldRef; ValueToken: JsonToken; FieldKey: Text; LineIndex: Integer)
@@ -437,12 +443,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
         end;
     end;
 
-    // OData property names and BC field names differ in fixed ways ("Account No." is exposed as
-    // accountNumber, "VAT %" as vatPercent), so both sides are folded to the same shape.
-    // The pass-through used to match any field on Gen. Journal Line, which is wider than the
-    // OData page it replaces — a caller could set System-Created Entry or Check Printed. This
-    // is page 6407's field list, generated from its source, and the pass-through is limited to
-    // it so callers keep exactly the access they had, no more.
     // Empty unless the key resembles a handled one, in which case the exact spelling to use.
     local procedure CanonicalHandledKey(FieldKey: Text): Text
     var
@@ -455,63 +455,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 exit(Handled);
 
         exit('');
-    end;
-
-    local procedure IsExposedField(FieldKey: Text): Boolean
-    var
-        Exposed: List of [Text];
-        Name: Text;
-    begin
-        Exposed := ExposedFieldNames().Split(',');
-        foreach Name in Exposed do
-            if NormalizeFieldName(Name) = NormalizeFieldName(FieldKey) then
-                exit(true);
-
-        exit(false);
-    end;
-
-    local procedure ExposedFieldNames(): Text
-    var
-        Names: Text;
-    begin
-        Names += 'accountId,accountNumber,accountType,additionalCurrencyPosting,allocatedAmtLcy,';
-        Names += 'allowApplication,allowZeroAmountPosting,amount,amountLcy,appliedAutomatically,';
-        Names += 'appliesToDocNumber,appliesToDocType,appliesToExtDocNumber,appliesToId,';
-        Names += 'appliesToInvoiceId,balAccountNumber,balAccountType,balanceLcy,balGenBusPostingGroup,';
-        Names += 'balGenPostingType,balGenProdPostingGroup,balTaxAreaCode,balTaxGroupCode,balTaxLiable,';
-        Names += 'balUseTax,balVatAmount,balVatAmountLcy,balVatBaseAmount,balVatBaseAmountLcy,';
-        Names += 'balVatBusPostingGroup,balVatCalculationType,balVatDifference,balVatPercent,';
-        Names += 'balVatProdPostingGroup,bankPaymentType,billToPayToNumber,budgetedFaNumber,';
-        Names += 'businessUnitCode,campaignNumber,checkExported,checkPrinted,checkTransmitted,comment,';
-        Names += 'contactGraphId,correction,countryRegionCode,creditAmount,creditorNumber,currencyCode,';
-        Names += 'currencyFactor,customerId,dataExchEntryNumber,dataExchLineNumber,debitAmount,';
-        Names += 'deferralCode,deferralLineNumber,deprAcquisitionCost,depreciationBookCode,';
-        Names += 'deprUntilFaPostingDate,description,dimensionSetId,directDebitMandateId,documentDate,';
-        Names += 'documentNumber,documentType,dueDate,duplicateInDepreciationBook,eu3PartyTrade,';
-        Names += 'expirationDate,exportedToPaymentFile,externalDocumentNumber,faAddCurrencyFactor,';
-        Names += 'faErrorEntryNumber,faPostingDate,faPostingType,faReclassificationEntry,financialVoid,';
-        Names += 'genBusPostingGroup,genPostingType,genProdPostingGroup,hasPaymentExportError,icAccountNo,';
-        Names += 'icAccountType,icDirection,icPartnerCode,icPartnerTransactionNumber,id,';
-        Names += 'incomingDocumentEntryNumber,indexEntry,insuranceNumber,invDiscountLcy,jobCurrencyCode,';
-        Names += 'jobCurrencyFactor,jobLineAmount,jobLineAmountLcy,jobLineDiscAmountLcy,';
-        Names += 'jobLineDiscountAmount,jobLineDiscountPercent,jobLineType,jobNumber,';
-        Names += 'jobPlanningLineNumber,jobQuantity,jobRemainingQty,jobTaskNumber,jobTotalCost,';
-        Names += 'jobTotalCostLcy,jobTotalPrice,jobTotalPriceLcy,jobUnitCost,jobUnitCostLcy,';
-        Names += 'jobUnitOfMeasureCode,jobUnitPrice,jobUnitPriceLcy,journalBatchId,journalBatchName,';
-        Names += 'journalTemplateName,lastModifiedDatetime,lineNumber,maintenanceCode,messageToRecipient,';
-        Names += 'numberOfDepreciationDays,onHold,payerInformation,paymentDiscountPercent,';
-        Names += 'paymentMethodCode,paymentReference,paymentTermsCode,pmtDiscountDate,postingDate,';
-        Names += 'postingGroup,postingNumberSeries,prepayment,prodOrderNumber,profitLcy,quantity,';
-        Names += 'reasonCode,recipientBankAccount,recurringFrequency,recurringMethod,reversingEntry,';
-        Names += 'salespersPurchCode,salesPurchLcy,salvageValue,sellToBuyFromNumber,';
-        Names += 'shipToOrderAddressCode,shortcutDimension1Code,shortcutDimension2Code,sourceCode,';
-        Names += 'sourceCurrencyAmount,sourceCurrencyCode,sourceCurrVatAmount,sourceCurrVatBaseAmount,';
-        Names += 'sourceLineNumber,sourceNumber,sourceType,systemCreatedEntry,taxAreaCode,taxGroupCode,';
-        Names += 'taxLiable,transactionInformation,useDuplicationList,useTax,vatAmount,vatAmountLcy,';
-        Names += 'vatBaseAmount,vatBaseAmountLcy,vatBaseDiscountPercent,vatBusPostingGroup,';
-        Names += 'vatCalculationType,vatDifference,vatPercent,vatPosting,vatProdPostingGroup,';
-        Names += 'vatRegistrationNumber';
-        exit(Names);
     end;
 
     local procedure NormalizeFieldName(Value: Text) Normalized: Text

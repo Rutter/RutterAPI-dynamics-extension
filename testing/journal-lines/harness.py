@@ -9,17 +9,26 @@ import builtins, functools, json, os, socket, sys, urllib.error, urllib.parse, u
 
 print = functools.partial(builtins.print, flush=True)
 
-# This machine advertises IPv6 but has no route, so a call that resolves to an AAAA record
-# dies with Errno 101 — randomly, mid-run, on whichever shape drew the short straw. Resolve
-# BC over IPv4 only.
-_getaddrinfo = socket.getaddrinfo
-socket.getaddrinfo = lambda *a, **kw: [r for r in _getaddrinfo(*a, **kw) if r[0] == socket.AF_INET]
+BC_HOST = "api.businesscentral.dynamics.com"
+BASE = f"https://{BC_HOST}/v2.0"
 
-BASE = "https://api.businesscentral.dynamics.com/v2.0"
+# Some machines advertise IPv6 with no route, so BC calls die with Errno 101 at random.
+# Prefer BC's IPv4 addresses; every other host, and a BC lookup with no IPv4, is untouched.
+_getaddrinfo = socket.getaddrinfo
+
+
+def _bc_prefer_ipv4(host, *args, **kwargs):
+    results = _getaddrinfo(host, *args, **kwargs)
+    if host != BC_HOST:
+        return results
+    return [r for r in results if r[0] == socket.AF_INET] or results
+
+
+socket.getaddrinfo = _bc_prefer_ipv4
 
 # Refuse to test a build older than this. Bump it when a new block ships; a stale extension
 # otherwise reports green against code that isn't there.
-MIN_EXTENSION_VERSION = (22, 5, 0, 32)
+MIN_EXTENSION_VERSION = (22, 5, 0, 37)
 
 # The declared test connections — the only ones this suite may ever touch. Adding an entry
 # here is the act of declaring a connection safe to write to; anything not listed is assumed
@@ -167,10 +176,10 @@ class Client:
     def read(self, line_id):
         return self.call("GET", f"{self.odata}/workflowGenJournalLines({line_id})")
 
-    def count_lines(self):
+    def line_ids(self):
         url = (f"{self.odata}/workflowGenJournalLines?$filter=journalBatchName eq "
                f"'{self.cfg['batch_name']}' and journalTemplateName eq 'GENERAL'&$select=id")
-        return len(self.call("GET", urllib.parse.quote(url, safe=":/?&=$'")).get("value", []))
+        return {l["id"] for l in self.call("GET", urllib.parse.quote(url, safe=":/?&=$'")).get("value", [])}
 
     def delete(self, ids):
         self.action("deleteLines", {"lineIdsJson": json.dumps(ids)})

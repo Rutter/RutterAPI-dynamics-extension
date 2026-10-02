@@ -229,7 +229,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // This is the ordering the backend cannot express in one OData request, which is why
         // it PATCHes the posting groups separately today.
         if GetText(LineObject, 'genPostingType', TextValue) then
-            GenJournalLine.Validate("Gen. Posting Type", ParseGenPostingType(TextValue, LineIndex));
+            GenJournalLine.Validate("Gen. Posting Type", ParseGenPostingType(TextValue, 'genPostingType', LineIndex));
         // Before VAT Prod.: validating Gen. Prod. Posting Group resets it to the group's default.
         if GetText(LineObject, 'genBusPostingGroup', TextValue) then
             GenJournalLine.Validate("Gen. Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Gen. Bus. Posting Group")));
@@ -244,6 +244,18 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // The RTR override wins over vatProdPostingGroup: today it is applied in a later PATCH.
         if GetText(LineObject, 'RTRVatProdPostingGroupAPI', TextValue) then
             GenJournalLine.Validate("VAT Prod. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."VAT Prod. Posting Group")));
+
+        // Same order on the balancing side: Bal. Gen. Prod. resets Bal. VAT Prod. to its default.
+        if GetText(LineObject, 'balGenPostingType', TextValue) then
+            GenJournalLine.Validate("Bal. Gen. Posting Type", ParseGenPostingType(TextValue, 'balGenPostingType', LineIndex));
+        if GetText(LineObject, 'balGenBusPostingGroup', TextValue) then
+            GenJournalLine.Validate("Bal. Gen. Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Bal. Gen. Bus. Posting Group")));
+        if GetText(LineObject, 'balGenProdPostingGroup', TextValue) then
+            GenJournalLine.Validate("Bal. Gen. Prod. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Bal. Gen. Prod. Posting Group")));
+        if GetText(LineObject, 'balVatBusPostingGroup', TextValue) then
+            GenJournalLine.Validate("Bal. VAT Bus. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Bal. VAT Bus. Posting Group")));
+        if GetText(LineObject, 'balVatProdPostingGroup', TextValue) then
+            GenJournalLine.Validate("Bal. VAT Prod. Posting Group", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Bal. VAT Prod. Posting Group")));
 
         if GetText(LineObject, 'taxAreaCode', TextValue) then
             GenJournalLine.Validate("Tax Area Code", CopyStr(TextValue, 1, MaxStrLen(GenJournalLine."Tax Area Code")));
@@ -336,8 +348,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
     end;
 
     // Anything the explicit list above doesn't cover is applied by name, limited to the fields
-    // page 6407 exposes. That page is a plain field-binding page with no triggers of its own,
-    // so a FieldRef.Validate reproduces it.
+    // page 6407 exposes, page extensions included. FieldRef.Validate runs the table field's
+    // OnValidate; a trigger on a page-extension control does not run (AL can't drive the page).
     local procedure ApplyExtraFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
     var
         RecRef: RecordRef;
@@ -376,6 +388,10 @@ codeunit 71692577 "RTR Journal Line Mgt"
         Canonical := CanonicalHandledKey(FieldKey);
         if Canonical <> '' then
             Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
+
+        // Validating Journal Batch Id would move the line out of the bound batch; the id is BC's to assign.
+        if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then
+            Error('Line %1: field "%2" cannot be set; lines are created in the batch the action is called on.', LineIndex, FieldKey);
 
         // Same fields the OData page accepts, including page extensions installed on this tenant.
         if not FindPageControl(FieldKey, PageControlField) then
@@ -481,7 +497,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
     // Setting an option/enum field through a FieldRef is where the ordinal trap lives: for an
     // enum, position in OptionMembers is not the ordinal once the enum has gaps (Gen. Journal
     // Account Type jumps 6 -> 10) or a localization adds values at 50000+. Let BC resolve the
-    // name itself first; fall back to the positional lookup only if it will not.
+    // name itself; the positional lookup is only for a value it cannot resolve as a name.
     local procedure SetOptionField(var FldRef: FieldRef; Value: Text; FieldKey: Text; LineIndex: Integer)
     var
         Members: List of [Text];
@@ -489,26 +505,16 @@ codeunit 71692577 "RTR Journal Line Mgt"
         Member: Text;
         i: Integer;
     begin
-        if TryValidateByName(FldRef, Value.Trim()) then
-            exit;
-
         MemberList := FldRef.OptionMembers;
         Members := MemberList.Split(',');
-        for i := 1 to Members.Count do begin
-            Member := Members.Get(i);
+        foreach Member in Members do
             if UpperCase(Member.Trim()) = UpperCase(Value.Trim()) then begin
-                FldRef.Validate(i - 1);
+                // Outside a TryFunction, so a real validation error surfaces instead of falling back.
+                FldRef.Validate(Member.Trim());
                 exit;
             end;
-        end;
 
         Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, MemberList);
-    end;
-
-    [TryFunction]
-    local procedure TryValidateByName(var FldRef: FieldRef; Value: Text)
-    begin
-        FldRef.Validate(Value);
     end;
 
     // The exact spelling of a key the ordered path consumes. A near miss is rejected rather
@@ -545,6 +551,11 @@ codeunit 71692577 "RTR Journal Line Mgt"
         HandledKeys.Add('vatProdPostingGroup');
         HandledKeys.Add('RTRVatBusPostingGroupAPI');
         HandledKeys.Add('RTRVatProdPostingGroupAPI');
+        HandledKeys.Add('balGenPostingType');
+        HandledKeys.Add('balGenBusPostingGroup');
+        HandledKeys.Add('balGenProdPostingGroup');
+        HandledKeys.Add('balVatBusPostingGroup');
+        HandledKeys.Add('balVatProdPostingGroup');
         HandledKeys.Add('taxAreaCode');
         HandledKeys.Add('taxGroupCode');
         HandledKeys.Add('taxLiable');
@@ -612,7 +623,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         Error('Line %1: "%2" is not a valid %3.', LineIndex, Value, FieldKey);
     end;
 
-    local procedure ParseGenPostingType(Value: Text; LineIndex: Integer) GenPostingType: Enum "General Posting Type"
+    local procedure ParseGenPostingType(Value: Text; FieldKey: Text; LineIndex: Integer) GenPostingType: Enum "General Posting Type"
     var
         Names: List of [Text];
         Ordinals: List of [Integer];
@@ -625,7 +636,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             if UpperCase(Names.Get(i)) = UpperCase(Value) then
                 exit(Enum::"General Posting Type".FromInteger(Ordinals.Get(i)));
 
-        Error('Line %1: "%2" is not a valid genPostingType.', LineIndex, Value);
+        Error('Line %1: "%2" is not a valid %3.', LineIndex, Value, FieldKey);
     end;
 
     local procedure ParseSourceType(Value: Text; LineIndex: Integer) SourceType: Enum "Gen. Journal Source Type"

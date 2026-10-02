@@ -31,7 +31,12 @@ from harness import line_no
 # not. Matching it would mean reintroducing the mismatched in-between state the block removes.
 # balanceLcy is the journal page's running-balance display field and is never posted.
 # Add an entry only with the reason written down; an unexplained one is a hidden regression.
-ACCEPTED = {"bal account pair": {"description", "balanceLcy"}}
+# The bal posting group shapes carry a G/L bal account too, so the same two fields differ.
+ACCEPTED = {
+    "bal account pair": {"description", "balanceLcy"},
+    "bal posting groups, VAT before Gen (VAT5)": {"description", "balanceLcy"},
+    "bal posting groups, VAT before Gen (ZERO)": {"description", "balanceLcy"},
+}
 
 
 def base_line(cfg, fx, **over):
@@ -98,6 +103,15 @@ def shapes(cfg, fx):
              base_line(cfg, fx, amount=57.14, currencyCode=cfg["currency"],
                        RTRCurrencyFactorAPI=3.6725, vatProdPostingGroup=prod)),
         ]
+        # Bal. VAT Prod. sent before Bal. Gen. Prod., which resets it to the group's default.
+        # Two VAT groups, so at least one differs from MISC's default and the reset would show.
+        for bal_vat in (prod, "ZERO"):
+            out.append((f"bal posting groups, VAT before Gen ({bal_vat})",
+                        base_line(cfg, fx, balAccountType="G/L Account", balAccountNumber=gl2,
+                                  balVatBusPostingGroup=bus, balVatProdPostingGroup=bal_vat,
+                                  balGenPostingType="Purchase", balGenBusPostingGroup=bus,
+                                  balGenProdPostingGroup="MISC",
+                                  _expect={"balVatProdPostingGroup": bal_vat})))
     # The two restore paths: validating Account No. pulls the account's VAT setup
     # (Validate("VAT Prod. Posting Group") -> VAT %, VAT Amount, VAT Base Amount) and its
     # default dimensions (CreateDimFromDefaultDim). The old accountId path did neither, so
@@ -114,9 +128,12 @@ def shapes(cfg, fx):
         # BC's to apply and must survive on both paths.
         out.append(("account with default dimension, sent by number",
                     base_line(cfg, fx, accountId=None, accountNumber=acct)))
-        out.append(("bank account with default dimension, sent by number",
-                    base_line(cfg, fx, accountId=None, accountType="Bank Account",
-                              accountNumber=cfg["bank"])))
+    # The backend's new path sends a bank line by number in the one call; legacy creates it as a
+    # G/L line and PATCHes the number in, which is what left stale balTaxGroupCode on refunds.
+    # The legacy half here is a plain by-number POST, so this checks AL matches BC's own validate.
+    out.append(("bank account sent by number",
+                base_line(cfg, fx, accountId=None, accountType="Bank Account",
+                          accountNumber=cfg["bank"])))
 
     # An account with a source currency converts the line when its number is validated: a 700
     # line against an AED account posted 163.63 to the ledger before the currency restore.
@@ -159,6 +176,8 @@ def failure_payloads(cfg, fx):
         ("unknown custom field", [base_line(cfg, fx, notAFieldAtAll="x")]),
         ("nested field (dimensionSetLines)",
          [base_line(cfg, fx, dimensionSetLines=[{"classId": "x", "template": {"code": "DEPT"}}])]),
+        ("journalBatchId can't move the line", [base_line(cfg, fx, journalBatchId=str(uuid.uuid4()))]),
+        ("id can't be set", [base_line(cfg, fx, id=str(uuid.uuid4()))]),
         ("mid-batch failure rolls back",
          [base_line(cfg, fx), base_line(cfg, fx),
           base_line(cfg, fx, accountId=None, accountNumber="NOPE")]),

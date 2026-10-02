@@ -84,21 +84,30 @@ def bank_deposit_batch(client, cfg):
     ok = len(ids) == len(lines)
     print(f"  {'PASS' if ok else 'FAIL'}  {len(lines)}-line bank deposit in one call "
           f"({len(ids)} ids returned)")
+    # The only many-line call, so check each line landed with what was sent, in order.
+    for i, (sent, line_id) in enumerate(zip(lines, ids), 1):
+        got = client.read(line_id)
+        wrong = [(k, sent[k], got.get(k)) for k in ("accountNumber", "amount", "description")
+                 if got.get(k) != sent[k]]
+        if wrong:
+            ok = False
+            print(f"  FAIL  line {i}: " + ", ".join(f"{k} sent={s!r} got={g!r}" for k, s, g in wrong))
     return ids, ok
 
 
 def failure_cases(client, cfg, fx, created):
     ok = True
     for name, payload in failure_payloads(cfg, fx):
-        before = client.count_lines()
+        before = client.line_ids()
         try:
             created += al_create(client, payload)   # unexpected, but still ours to delete
             print(f"  FAIL  {name}: call succeeded, expected an error")
             ok = False
         except RuntimeError as e:
-            after = client.count_lines()
-            if after != before:
-                print(f"  FAIL  {name}: rejected but left {after - before} line(s) behind")
+            left = client.line_ids() - before
+            if left:
+                created += left                      # cleanup still has to remove them
+                print(f"  FAIL  {name}: rejected but left {len(left)} line(s) behind")
                 ok = False
             else:
                 msg = str(e)
@@ -130,7 +139,13 @@ def run(key):
                 legacy_id = legacy_create(client, dict(payload), created)
                 al_id = al_create(client, [dict(payload)])[0]
                 created.append(al_id)
-                passed &= diff(name, client.read(legacy_id), client.read(al_id), ACCEPTED)
+                al_line = client.read(al_id)
+                passed &= diff(name, client.read(legacy_id), al_line, ACCEPTED)
+                # Values the AL line must hold whatever legacy does.
+                for k, want in payload.get("_expect", {}).items():
+                    if al_line.get(k) != want:
+                        print(f"  FAIL  {name}: AL {k}={al_line.get(k)!r}, expected {want!r}")
+                        passed = False
             except RuntimeError as e:
                 print(f"  ERROR {name}: {e}")
                 passed = False

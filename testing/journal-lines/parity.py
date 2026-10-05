@@ -74,13 +74,14 @@ def al_create(client, payloads):
     return json.loads(client.action("createLines", {"linesJson": json.dumps(body)})["value"])
 
 
-def bank_deposit_batch(client, cfg):
+def bank_deposit_batch(client, cfg, created):
     lines = bank_deposit_lines(cfg)
     try:
         ids = al_create(client, lines)
     except RuntimeError as e:
         print(f"  FAIL  {len(lines)}-line bank deposit in one call: {e}")
-        return [], False
+        return False
+    created += ids      # before the reads below, so a failed read can't strand the lines
     ok = len(ids) == len(lines)
     print(f"  {'PASS' if ok else 'FAIL'}  {len(lines)}-line bank deposit in one call "
           f"({len(ids)} ids returned)")
@@ -92,7 +93,7 @@ def bank_deposit_batch(client, cfg):
         if wrong:
             ok = False
             print(f"  FAIL  line {i}: " + ", ".join(f"{k} sent={s!r} got={g!r}" for k, s, g in wrong))
-    return ids, ok
+    return ok
 
 
 def failure_cases(client, cfg, fx, created):
@@ -151,9 +152,7 @@ def run(key):
                 passed = False
 
         print("\nbatch stress:")
-        ids, ok = bank_deposit_batch(client, cfg)
-        created += ids
-        passed &= ok
+        passed &= bank_deposit_batch(client, cfg, created)
 
         print("\nfailure cases:")
         passed &= failure_cases(client, cfg, fx, created)

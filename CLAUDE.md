@@ -5,8 +5,9 @@ integration. See [README.md](README.md) for what it is and how to compile and up
 
 ## Testing journal-line changes (MANDATORY)
 
-**Any change to `src/codeunits/JournalLineManagement.al` requires a full green run of the
-journal-line parity suite on both sandbox companies before the build ships.**
+**Any change to `CreateLines` in `src/codeunits/JournalLineManagement.al` requires a full green
+run of the journal-line parity suite on both sandbox companies before the build ships.**
+DeleteLines and PostLines have no suite yet.
 
 ```bash
 python3 testing/journal-lines/parity.py both

@@ -1,8 +1,8 @@
 ---
 name: journal-line-parity
-description: Run the journal-line parity suite against both sandbox companies to verify a journal-line AL block behaves exactly like the endpoint it replaces. MANDATORY after any change to the RTR Journal Line Mgt codeunit. Use when testing or verifying CreateLines / DeleteLines / PostLines, after building and installing a new AccountLink version, or when asked whether a journal-line change is safe to ship.
+description: Run the journal-line parity suite against both sandbox companies to verify the CreateLines AL block behaves exactly like the endpoint it replaces. MANDATORY after any change to CreateLines in the RTR Journal Line Mgt codeunit. Use when testing or verifying CreateLines, after building and installing a new AccountLink version, or when asked whether a CreateLines change is safe to ship. DeleteLines and PostLines have no suite yet.
 argument-hint: "[usa|uae|both]"
-allowed-tools: Bash(python3 testing/journal-lines/*) Bash(curl -s -m * http://localhost:*) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
+allowed-tools: Bash(python3 testing/journal-lines/*) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
 ---
 
 # Journal-line parity suite
@@ -33,9 +33,9 @@ The "old way" half is a **hand-written replica** of rutter-backend's
 
 ## The rule
 
-**Any change to `src/codeunits/JournalLineManagement.al` requires a full green run on both
-companies before the build ships.** Not a subset, not one company. If you changed the
-codeunit and have not run this, the change is not verified.
+**Any change to `CreateLines` (or the procedures it calls) in `src/codeunits/JournalLineManagement.al`
+requires a full green run on both companies before the build ships.** Not a subset, not one
+company. If you changed it and have not run this, the change is not verified.
 
 (Current scope is the CreateLines suite. Widen this rule as the other blocks get suites.)
 
@@ -78,7 +78,7 @@ not evidence: several customer realms carry CRONUS-style demo names.
 
 1. **The build under test must be installed on both environments.** The suite checks the
    version and refuses to run below `MIN_EXTENSION_VERSION` in `harness.py` (currently
-   22.5.0.37 — bump it when a new block ships). It cannot tell you whether *your* build is
+   22.5.0.38 — bump it when a new block ships). It cannot tell you whether *your* build is
    the one installed, only that something recent enough is. Installing is manual: build in
    VS Code, upload through Extension Management on each environment.
 2. **rutter-backend's dev server must be running**, so the suite can mint its own BC tokens
@@ -125,8 +125,9 @@ The run ends with a `PASS`/`FAIL` per company and exits non-zero on any failure.
 
 ## Accepted differences — do not "fix" these
 
-`ACCEPTED` in `shapes.py` lists fields allowed to differ per shape. Currently one entry, for
-`bal account pair`:
+`ACCEPTED` in `shapes.py` lists fields allowed to differ per shape. Every entry is a shape with a
+G/L balancing account (`bal account pair`, the two `bal posting groups, VAT before Gen` shapes and
+the default-dimension shapes with a G/L bal account), and they share one cause:
 
 - **`description`** — the old path overwrites it with the balancing account's name; the AL
   block keeps what the caller sent. Page 6407 applies `accountId` near the end, so the old
@@ -147,6 +148,9 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
   # list, then feed the ids to Microsoft.NAV.deleteLines on the same journalBatchActions id
   GET {odata}/workflowGenJournalLines?$filter=journalBatchName eq 'DEFAULT' and journalTemplateName eq 'GENERAL'
   ```
+- **One run per company at a time.** Failure cases diff the batch's line ids before and after
+  each call, so a second run writing to the same batch shows up as leftovers, and its cleanup
+  deletes the other run's lines.
 - **`pkill -f "yarn dev:web"` leaves the `ts-node src/index.ts` child holding the port.** Kill
   that pid too, and confirm with `curl localhost:$PORT/health`. Stopping the server is not in
   this skill's allowed tools — ask before killing processes.

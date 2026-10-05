@@ -36,6 +36,8 @@ ACCEPTED = {
     "bal account pair": {"description", "balanceLcy"},
     "bal posting groups, VAT before Gen (VAT5)": {"description", "balanceLcy"},
     "bal posting groups, VAT before Gen (ZERO)": {"description", "balanceLcy"},
+    "account with default dimension by id, G/L bal account": {"description", "balanceLcy"},
+    "account with default dimension by number, G/L bal account": {"description", "balanceLcy"},
 }
 
 
@@ -82,6 +84,7 @@ def shapes(cfg, fx):
         ("bal account is a bank",
          base_line(cfg, fx, balAccountType="Bank Account", _balBankAccountNumber=cfg["bank"])),
         ("custom field passthrough", base_line(cfg, fx, onHold="RTR")),
+        ("custom field date formula", base_line(cfg, fx, recurringFrequency="1M")),
     ]
     if cfg["currency"]:
         out.append(("foreign currency + factor (Alaan)",
@@ -128,6 +131,19 @@ def shapes(cfg, fx):
         # BC's to apply and must survive on both paths.
         out.append(("account with default dimension, sent by number",
                     base_line(cfg, fx, accountId=None, accountNumber=acct)))
+        # Validating the bal account rebuilds dimensions from both accounts. Legacy validated a G/L
+        # bal while Account No. was blank (bal defaults only); a bank bal it PATCHes in afterwards.
+        out += [
+            ("account with default dimension by id, G/L bal account",
+             base_line(cfg, fx, accountId=fx["gl_id"][acct], balAccountType="G/L Account",
+                       balAccountNumber=gl2)),
+            ("account with default dimension by number, G/L bal account",
+             base_line(cfg, fx, accountId=None, accountNumber=acct, balAccountType="G/L Account",
+                       balAccountNumber=gl2)),
+            ("account with default dimension by id, bank bal account",
+             base_line(cfg, fx, accountId=fx["gl_id"][acct], balAccountType="Bank Account",
+                       _balBankAccountNumber=cfg["bank"])),
+        ]
     # The backend's new path sends a bank line by number in the one call; legacy creates it as a
     # G/L line and PATCHes the number in, which is what left stale balTaxGroupCode on refunds.
     # The legacy half here is a plain by-number POST, so this checks AL matches BC's own validate.
@@ -178,6 +194,11 @@ def failure_payloads(cfg, fx):
          [base_line(cfg, fx, dimensionSetLines=[{"classId": "x", "template": {"code": "DEPT"}}])]),
         ("journalBatchId can't move the line", [base_line(cfg, fx, journalBatchId=str(uuid.uuid4()))]),
         ("id can't be set", [base_line(cfg, fx, id=str(uuid.uuid4()))]),
+        # OData rejects over-length values; cutting an account number could land on another account.
+        ("description longer than the field", [base_line(cfg, fx, description="D" * 120)]),
+        ("account number longer than the field",
+         [base_line(cfg, fx, accountId=None, accountNumber=cfg["gl"][0] + "X" * 20)]),
+        ("bad date formula", [base_line(cfg, fx, recurringFrequency="garbage")]),
         ("mid-batch failure rolls back",
          [base_line(cfg, fx), base_line(cfg, fx),
           base_line(cfg, fx, accountId=None, accountNumber="NOPE")]),

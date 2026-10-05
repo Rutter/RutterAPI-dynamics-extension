@@ -28,7 +28,7 @@ socket.getaddrinfo = _bc_prefer_ipv4
 
 # Refuse to test a build older than this. Bump it when a new block ships; a stale extension
 # otherwise reports green against code that isn't there.
-MIN_EXTENSION_VERSION = (22, 5, 0, 37)
+MIN_EXTENSION_VERSION = (22, 5, 0, 38)
 
 # The declared test connections — the only ones this suite may ever touch. Adding an entry
 # here is the act of declaring a connection safe to write to; anything not listed is assumed

@@ -1,5 +1,10 @@
 # Releases
 
+## v22.4.0.3 — 2026-10-06
+- File: Rutter_AccountLink_22.4.0.3.app (signed, Azure Trusted Signing)
+- Submitted to Partner Center for automated validation (~3+ business days)
+- Changes: createLines action to create a set of journal lines in one transaction (fixed field order, VAT/tax overrides, balancing posting groups, custom fields via page 6407 incl. page extensions, over-length and date-formula handling).
+
 ## v22.4.0.2 — 2026-09-01
 - File: Rutter_AccountLink_22.4.0.2.app (signed, Azure Trusted Signing)
 - Submitted to Partner Center for automated validation (~3+ business days)

@@ -9,7 +9,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Set per line so the value helpers can name the offending line without every one of
         // them taking an index they otherwise have no use for.
         CurrentLineIndex: Integer;
-        // UpdateLine mirrors BC's PATCH on page 6407 more strictly than CreateLines does today.
+        // UpdateLines mirrors BC's PATCH on page 6407 more strictly than CreateLines does today.
         MatchPatchRules: Boolean;
 
     trigger OnRun()
@@ -131,29 +131,53 @@ codeunit 71692577 "RTR Journal Line Mgt"
         CreatedIds.WriteTo(CreatedIdsJson);
     end;
 
-    // Modifies one existing line in place, keeping its identity: only the keys sent are applied,
-    // in CreateLines' field order, before a single Modify(). Any Error() leaves the line unchanged.
-    procedure UpdateLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdText: Text; LineJson: Text)
+    // Modifies existing lines in place, keeping their identity: only the keys sent are applied,
+    // in CreateLines' field order, before one Modify() per line. Any Error() rolls back every line.
+    procedure UpdateLines(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LinesJson: Text) UpdatedCount: Integer
+    var
+        LinesArray: JsonArray;
+        LineToken: JsonToken;
+        LineIndex: Integer;
+    begin
+        if not LinesArray.ReadFrom(LinesJson) then
+            Error('Invalid lines payload: could not parse JSON.');
+
+        if LinesArray.Count = 0 then
+            Error('At least one line must be provided.');
+
+        if AnyLineHasTaxOverride(LinesArray) then
+            EnableVatDifference(JournalTemplateName);
+
+        MatchPatchRules := true;
+        foreach LineToken in LinesArray do begin
+            LineIndex += 1;
+            UpdateSingleLine(JournalTemplateName, JournalBatchName, LineToken.AsObject(), LineIndex);
+            UpdatedCount += 1;
+        end;
+    end;
+
+    local procedure UpdateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer)
     var
         GenJournalLine: Record "Gen. Journal Line";
-        LineObject: JsonObject;
-        LinesArray: JsonArray;
+        LineIdText: Text;
         LineId: Guid;
         NewTemplateName: Text;
         NewBatchName: Text;
         NewLineNo: Integer;
     begin
-        if not LineObject.ReadFrom(LineJson) then
-            Error('Invalid line payload: could not parse JSON.');
-
+        CurrentLineIndex := LineIndex;
+        if not GetText(LineObject, 'id', LineIdText) then
+            Error('Line %1: "id" is required.', LineIndex);
         if not Evaluate(LineId, LineIdText) then
-            Error('Invalid line id: %1.', LineIdText);
+            Error('Line %1: invalid line id %2.', LineIndex, LineIdText);
+        // Identifies the line; the remaining keys are the update.
+        LineObject.Remove('id');
 
         GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
         GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
         GenJournalLine.SetRange(SystemId, LineId);
         if not GenJournalLine.FindFirst() then
-            Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
+            Error('Line %1: journal line %2 not found in batch %3.', LineIndex, LineId, JournalBatchName);
 
         // Page 6407's PATCH renames the line when any key field changes, moving it between batches.
         if not GetText(LineObject, 'journalTemplateName', NewTemplateName) then
@@ -173,13 +197,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             GenJournalLine.UpdateJournalBatchID();
         end;
 
-        LinesArray.Add(LineObject);
-        if AnyLineHasTaxOverride(LinesArray) then
-            EnableVatDifference(GenJournalLine."Journal Template Name");
-
-        MatchPatchRules := true;
-        CurrentLineIndex := 1;
-        ApplyLineFields(GenJournalLine, LineObject, 1);
+        ApplyLineFields(GenJournalLine, LineObject, LineIndex);
         GenJournalLine.Modify(true);
     end;
 
@@ -233,7 +251,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         GenJournalLine.Insert(true);
     end;
 
-    // Shared by CreateLines and UpdateLine so both apply fields in the same order.
+    // Shared by CreateLines and UpdateLines so both apply fields in the same order.
     local procedure ApplyLineFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
     var
         SnapshotLine: Record "Gen. Journal Line";

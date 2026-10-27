@@ -85,6 +85,19 @@ page 71692592 "RTR Journal Batch Actions API"
         exit(JournalLineMgt.CreateLines(Rec."Journal Template Name", Rec.Name, LinesJson));
     end;
 
+    // Modifies one existing line in this batch atomically — see JournalLineManagement.al.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.updateLine
+    //   Body: { "lineId": "<lineSystemId>", "lineJson": "{\"accountType\":\"Bank Account\",\"accountNumber\":\"CHECKING\"}" }
+    [ServiceEnabled]
+    procedure updateLine(LineId: Text; LineJson: Text)
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        JournalLineMgt.UpdateLine(Rec."Journal Template Name", Rec.Name, LineId, LineJson);
+    end;
+
     // Posts only the given lines, not the whole batch — see JournalLineManagement.al.
     [ServiceEnabled]
     procedure postLines(LineIdsJson: Text): Integer

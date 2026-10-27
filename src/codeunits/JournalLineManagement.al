@@ -9,6 +9,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Set per line so the value helpers can name the offending line without every one of
         // them taking an index they otherwise have no use for.
         CurrentLineIndex: Integer;
+        // UpdateLine mirrors BC's PATCH on page 6407 more strictly than CreateLines does today.
+        MatchPatchRules: Boolean;
 
     trigger OnRun()
     begin
@@ -129,6 +131,58 @@ codeunit 71692577 "RTR Journal Line Mgt"
         CreatedIds.WriteTo(CreatedIdsJson);
     end;
 
+    // Modifies one existing line in place, keeping its identity: only the keys sent are applied,
+    // in CreateLines' field order, before a single Modify(). Any Error() leaves the line unchanged.
+    procedure UpdateLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdText: Text; LineJson: Text)
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+        LineObject: JsonObject;
+        LinesArray: JsonArray;
+        LineId: Guid;
+        NewTemplateName: Text;
+        NewBatchName: Text;
+        NewLineNo: Integer;
+    begin
+        if not LineObject.ReadFrom(LineJson) then
+            Error('Invalid line payload: could not parse JSON.');
+
+        if not Evaluate(LineId, LineIdText) then
+            Error('Invalid line id: %1.', LineIdText);
+
+        GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
+        GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
+        GenJournalLine.SetRange(SystemId, LineId);
+        if not GenJournalLine.FindFirst() then
+            Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
+
+        // Page 6407's PATCH renames the line when any key field changes, moving it between batches.
+        if not GetText(LineObject, 'journalTemplateName', NewTemplateName) then
+            NewTemplateName := GenJournalLine."Journal Template Name";
+        if not GetText(LineObject, 'journalBatchName', NewBatchName) then
+            NewBatchName := GenJournalLine."Journal Batch Name";
+        if not GetInt(LineObject, 'lineNumber', NewLineNo) then
+            NewLineNo := GenJournalLine."Line No.";
+        // Code fields store uppercase, so a lowercase resend of the same batch is not a rename.
+        if (UpperCase(NewTemplateName) <> GenJournalLine."Journal Template Name") or (UpperCase(NewBatchName) <> GenJournalLine."Journal Batch Name") or
+           (NewLineNo <> GenJournalLine."Line No.")
+        then begin
+            GenJournalLine.Rename(
+                FitText(NewTemplateName, 'journalTemplateName', MaxStrLen(GenJournalLine."Journal Template Name")),
+                FitText(NewBatchName, 'journalBatchName', MaxStrLen(GenJournalLine."Journal Batch Name")),
+                NewLineNo);
+            GenJournalLine.UpdateJournalBatchID();
+        end;
+
+        LinesArray.Add(LineObject);
+        if AnyLineHasTaxOverride(LinesArray) then
+            EnableVatDifference(GenJournalLine."Journal Template Name");
+
+        MatchPatchRules := true;
+        CurrentLineIndex := 1;
+        ApplyLineFields(GenJournalLine, LineObject, 1);
+        GenJournalLine.Modify(true);
+    end;
+
     // Applies a custom tax amount to a line. "VAT Amount" is the underlying storage field for
     // both VAT (non-US) and Sales Tax (US/NA) — BC picks the label by localization.
     // We bypass Validate("VAT Amount") because the journal batch context (Allow VAT Difference)
@@ -160,13 +214,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
     // Field order here is the point of this codeunit — see the ordering notes inline.
     local procedure CreateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer; var GenJournalLine: Record "Gen. Journal Line")
     var
-        SnapshotLine: Record "Gen. Journal Line";
-        TextValue: Text;
-        DecValue: Decimal;
         IntValue: Integer;
-        BoolValue: Boolean;
-        DateValue: Date;
-        GuidValue: Guid;
     begin
         CurrentLineIndex := LineIndex;
         GenJournalLine.Init();
@@ -181,6 +229,20 @@ codeunit 71692577 "RTR Journal Line Mgt"
         else
             GenJournalLine."Line No." := NextLineNo(JournalTemplateName, JournalBatchName);
 
+        ApplyLineFields(GenJournalLine, LineObject, LineIndex);
+        GenJournalLine.Insert(true);
+    end;
+
+    // Shared by CreateLines and UpdateLine so both apply fields in the same order.
+    local procedure ApplyLineFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
+    var
+        SnapshotLine: Record "Gen. Journal Line";
+        TextValue: Text;
+        DecValue: Decimal;
+        BoolValue: Boolean;
+        DateValue: Date;
+        GuidValue: Guid;
+    begin
         if GetText(LineObject, 'documentNumber', TextValue) then
             GenJournalLine.Validate("Document No.", FitText(TextValue, 'documentNumber', MaxStrLen(GenJournalLine."Document No.")));
         if GetText(LineObject, 'externalDocumentNumber', TextValue) then
@@ -202,7 +264,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
             if not HasValue(LineObject, 'accountNumber') then
                 RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
             // Both paths: the backend's number PATCH resends the description, so it never kept the account name.
-            if not HasValue(LineObject, 'description') then
+            // PATCH lets BC fill a blanked description with the account name, so updates skip this.
+            if not HasValue(LineObject, 'description') and not MatchPatchRules then
                 GenJournalLine.Description := SnapshotLine.Description;
         end;
 
@@ -292,8 +355,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Last: every validate above recalculates the VAT amount BC computed for itself.
         if GetDecimal(LineObject, 'RTRVATAmountAPI', DecValue) then
             ApplyVatAmountOverride(GenJournalLine, DecValue);
-
-        GenJournalLine.Insert(true);
     end;
 
     // Puts back what validating Account No. copied off the account (see GetGLAccount in
@@ -416,14 +477,22 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         // Validating Journal Batch Id would move the line out of the bound batch; the id is BC's to assign.
         if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then
-            Error('Line %1: field "%2" cannot be set; lines are created in the batch the action is called on.', LineIndex, FieldKey);
+            Error('Line %1: field "%2" cannot be set; the line belongs to the batch the action is called on.', LineIndex, FieldKey);
 
         // Same fields the OData page accepts, including page extensions installed on this tenant.
         if not FindPageControl(FieldKey, PageControlField) then
             Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
 
+        if MatchPatchRules then begin
+            // PATCH ignores system fields (lastModifiedDatetime) and rejects read-only controls with this message.
+            if PageControlField.FieldNo >= 2000000000 then
+                exit;
+            if UpperCase(PageControlField.Editable) = 'FALSE' then
+                Error('Control ''%1'' is read-only.', FieldKey);
+        end;
+
         if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
-            Error('Line %1: field "%2" is a page field with no journal line field behind it, so createLines cannot set it.', LineIndex, FieldKey);
+            Error('Line %1: field "%2" is a page field with no journal line field behind it, so this action cannot set it.', LineIndex, FieldKey);
 
         FldRef := RecRef.Field(PageControlField.FieldNo);
         SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);

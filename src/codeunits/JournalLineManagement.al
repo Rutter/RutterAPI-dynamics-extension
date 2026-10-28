@@ -255,6 +255,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
     local procedure ApplyLineFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
     var
         SnapshotLine: Record "Gen. Journal Line";
+        AccountType: Enum "Gen. Journal Account Type";
         TextValue: Text;
         DecValue: Decimal;
         BoolValue: Boolean;
@@ -268,8 +269,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         // Account type before account number, both validated, in the same transaction: this is
         // what removes the backend's two-step PATCH for bank accounts.
-        if GetText(LineObject, 'accountType', TextValue) then
-            GenJournalLine.Validate("Account Type", ParseAccountType(TextValue, 'accountType', LineIndex));
+        // PATCH skips an unchanged type; validating it anyway clears the account already on the line.
+        if GetText(LineObject, 'accountType', TextValue) then begin
+            AccountType := ParseAccountType(TextValue, 'accountType', LineIndex);
+            if not (MatchPatchRules and (AccountType = GenJournalLine."Account Type")) then
+                GenJournalLine.Validate("Account Type", AccountType);
+        end;
         TextValue := ResolveAccountNo(LineObject, 'accountNumber', 'accountId', GenJournalLine."Account Type", LineIndex);
         if TextValue <> '' then begin
             SnapshotLine := GenJournalLine;
@@ -297,8 +302,11 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if GetText(LineObject, 'description', TextValue) then
             GenJournalLine.Validate(Description, FitText(TextValue, 'description', MaxStrLen(GenJournalLine.Description)));
 
-        if GetText(LineObject, 'balAccountType', TextValue) then
-            GenJournalLine.Validate("Bal. Account Type", ParseAccountType(TextValue, 'balAccountType', LineIndex));
+        if GetText(LineObject, 'balAccountType', TextValue) then begin
+            AccountType := ParseAccountType(TextValue, 'balAccountType', LineIndex);
+            if not (MatchPatchRules and (AccountType = GenJournalLine."Bal. Account Type")) then
+                GenJournalLine.Validate("Bal. Account Type", AccountType);
+        end;
         TextValue := ResolveAccountNo(LineObject, 'balAccountNumber', 'balancingAccountId', GenJournalLine."Bal. Account Type", LineIndex);
         if TextValue <> '' then begin
             GenJournalLine.Validate("Bal. Account No.", FitText(TextValue, 'balAccountNumber', MaxStrLen(GenJournalLine."Bal. Account No.")));
@@ -494,8 +502,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
             Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
 
         // Validating Journal Batch Id would move the line out of the bound batch; the id is BC's to assign.
-        if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then
+        if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then begin
+            // PATCH accepts the line's own batch id sent back unchanged.
+            if MatchPatchRules and IsUnchangedValue(RecRef, FieldKey, ValueToken) then
+                exit;
             Error('Line %1: field "%2" cannot be set; the line belongs to the batch the action is called on.', LineIndex, FieldKey);
+        end;
 
         // Same fields the OData page accepts, including page extensions installed on this tenant.
         if not FindPageControl(FieldKey, PageControlField) then
@@ -505,8 +517,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
             // PATCH ignores system fields (lastModifiedDatetime) and rejects read-only controls with this message.
             if PageControlField.FieldNo >= 2000000000 then
                 exit;
-            if UpperCase(PageControlField.Editable) = 'FALSE' then
+            if UpperCase(PageControlField.Editable) = 'FALSE' then begin
+                // PATCH accepts a read-only control sent back unchanged.
+                if IsUnchangedValue(RecRef, FieldKey, ValueToken) then
+                    exit;
                 Error('Control ''%1'' is read-only.', FieldKey);
+            end;
         end;
 
         if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
@@ -514,6 +530,32 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         FldRef := RecRef.Field(PageControlField.FieldNo);
         SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
+    end;
+
+    local procedure IsUnchangedValue(var RecRef: RecordRef; FieldKey: Text; ValueToken: JsonToken): Boolean
+    var
+        PageControlField: Record "Page Control Field";
+        FldRef: FieldRef;
+        GuidValue: Guid;
+        Ordinal: Integer;
+    begin
+        if not FindPageControl(FieldKey, PageControlField) then
+            exit(false);
+        if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
+            exit(false);
+        if ValueToken.AsValue().IsNull() then
+            exit(false);
+
+        FldRef := RecRef.Field(PageControlField.FieldNo);
+        case FldRef.Type of
+            // XML format renders an option as its ordinal, the request sends its name.
+            FieldType::Option:
+                exit(FindOptionOrdinal(FldRef, ValueToken.AsValue().AsText(), Ordinal) and
+                     (Format(FldRef.Value, 0, 9) = Format(Ordinal, 0, 9)));
+            FieldType::Guid:
+                exit(Evaluate(GuidValue, ValueToken.AsValue().AsText()) and (Format(FldRef.Value) = Format(GuidValue)));
+        end;
+        exit(Format(FldRef.Value, 0, 9) = ValueToken.AsValue().AsText());
     end;
 
     local procedure FindPageControl(FieldKey: Text; var PageControlField: Record "Page Control Field"): Boolean
@@ -626,7 +668,16 @@ codeunit 71692577 "RTR Journal Line Mgt"
         MemberList: Text;
         Member: Text;
         i: Integer;
+        Ordinal: Integer;
     begin
+        // Validating the member name fails ("can't be evaluated into type Option"); CreateLines keeps that path for now.
+        if MatchPatchRules then begin
+            if not FindOptionOrdinal(FldRef, Value, Ordinal) then
+                Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, FldRef.OptionMembers);
+            FldRef.Validate(Ordinal);
+            exit;
+        end;
+
         MemberList := FldRef.OptionMembers;
         Members := MemberList.Split(',');
         foreach Member in Members do
@@ -637,6 +688,27 @@ codeunit 71692577 "RTR Journal Line Mgt"
             end;
 
         Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, MemberList);
+    end;
+
+    local procedure FindOptionOrdinal(var FldRef: FieldRef; Value: Text; var Ordinal: Integer): Boolean
+    var
+        Members: List of [Text];
+        MemberList: Text;
+        i: Integer;
+    begin
+        MemberList := FldRef.OptionMembers;
+        Members := MemberList.Split(',');
+        for i := 1 to Members.Count do
+            if UpperCase(Members.Get(i).Trim()) = UpperCase(Value.Trim()) then begin
+                // An enum's position is not its ordinal once it has gaps or localization values.
+                if FldRef.IsEnum() then
+                    Ordinal := FldRef.GetEnumValueOrdinal(i)
+                else
+                    Ordinal := i - 1;
+                exit(true);
+            end;
+
+        exit(false);
     end;
 
     // The exact spelling of a key the ordered path consumes. A near miss is rejected rather

@@ -5,13 +5,18 @@ integration. See [README.md](README.md) for what it is and how to compile and up
 
 ## Testing journal-line changes (MANDATORY)
 
-**Any change to `CreateLines` in `src/codeunits/JournalLineManagement.al` requires a full green
-run of the journal-line parity suite on both sandbox companies before the build ships.**
-DeleteLines and PostLines have no suite yet.
+**Any change to `CreateLines`, `UpdateLines` or the field logic they share in
+`src/codeunits/JournalLineManagement.al` requires a full green run of both journal-line parity
+suites on both sandbox companies before the build ships.** DeleteLines and PostLines have no
+suite yet.
 
 ```bash
-python3 testing/journal-lines/parity.py both
+testing/journal-lines/run_all.sh <log dir>
 ```
+
+**A new block never changes how a shipped block behaves**, even to fix a bug in code they
+share. Scope the change to the new block (e.g. behind `MatchPatchRules`) and fix the shipped
+block separately, with evidence and its own parity run.
 
 Load the `journal-line-parity` skill, or read
 [`.claude/skills/journal-line-parity/SKILL.md`](.claude/skills/journal-line-parity/SKILL.md),

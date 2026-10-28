@@ -514,15 +514,13 @@ codeunit 71692577 "RTR Journal Line Mgt"
             Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
 
         if MatchPatchRules then begin
-            // PATCH ignores system fields (lastModifiedDatetime) and rejects read-only controls with this message.
+            // PATCH ignores system fields (lastModifiedDatetime) and only validates a field whose value changes.
             if PageControlField.FieldNo >= 2000000000 then
                 exit;
-            if UpperCase(PageControlField.Editable) = 'FALSE' then begin
-                // PATCH accepts a read-only control sent back unchanged.
-                if IsUnchangedValue(RecRef, FieldKey, ValueToken) then
-                    exit;
+            if IsUnchangedValue(RecRef, FieldKey, ValueToken) then
+                exit;
+            if UpperCase(PageControlField.Editable) = 'FALSE' then
                 Error('Control ''%1'' is read-only.', FieldKey);
-            end;
         end;
 
         if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
@@ -693,13 +691,19 @@ codeunit 71692577 "RTR Journal Line Mgt"
     local procedure FindOptionOrdinal(var FldRef: FieldRef; Value: Text; var Ordinal: Integer): Boolean
     var
         Members: List of [Text];
+        Captions: List of [Text];
         MemberList: Text;
+        CaptionList: Text;
         i: Integer;
     begin
         MemberList := FldRef.OptionMembers;
         Members := MemberList.Split(',');
+        // The page reads and writes captions, which localizations rename ("Normal VAT" is "Normal Tax" in the US).
+        CaptionList := FldRef.OptionCaption;
+        Captions := CaptionList.Split(',');
         for i := 1 to Members.Count do
-            if UpperCase(Members.Get(i).Trim()) = UpperCase(Value.Trim()) then begin
+            if (UpperCase(Members.Get(i).Trim()) = UpperCase(Value.Trim())) or
+               ((i <= Captions.Count) and (UpperCase(Captions.Get(i).Trim()) = UpperCase(Value.Trim()))) then begin
                 // An enum's position is not its ordinal once it has gaps or localization values.
                 if not TryEnumValueOrdinal(FldRef, i, Ordinal) then
                     Ordinal := i - 1;

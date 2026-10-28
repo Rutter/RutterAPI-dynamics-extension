@@ -29,7 +29,7 @@ socket.getaddrinfo = _bc_prefer_ipv4
 
 # Refuse to test a build older than this. Bump it when a new block ships; a stale extension
 # otherwise reports green against code that isn't there.
-MIN_EXTENSION_VERSION = (22, 5, 0, 46)
+MIN_EXTENSION_VERSION = (22, 5, 0, 47)
 
 # The declared test connections — the only ones this suite may ever touch. Adding an entry
 # here is the act of declaring a connection safe to write to; anything not listed is assumed
@@ -168,8 +168,13 @@ class Client:
         try:
             return self._call(method, url, body, token)
         except RuntimeError as e:
+            if not retry:
+                raise
+            # A refused connection never reached BC, so even a POST is safe to resend.
+            if str(e).startswith(f"{method} connect error"):
+                return self.call(method, url, body, retry=False)
             # A run outlives the hour a BC token lasts; mint one and retry once.
-            if not (retry and str(e).startswith(f"{method} 401")):
+            if not str(e).startswith(f"{method} 401"):
                 raise
             with self.lock:
                 if self.token == token:
@@ -189,7 +194,9 @@ class Client:
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"{method} {e.code}: {e.read().decode()[:400]}")
-        except (urllib.error.URLError, OSError) as e:
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"{method} connect error: {e}")
+        except OSError as e:
             raise RuntimeError(f"{method} network error: {e}")
 
     def action(self, name, body):

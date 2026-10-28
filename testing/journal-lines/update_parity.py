@@ -167,12 +167,13 @@ def run_sweep(client, cfg, created):
     # Each line has its own id-derived fields; send what that line holds.
     before = client.read_many(ids)
     legacy_err = dict(zip(fields, pmap(lambda p: attempt(patch, client, p[1], {p[0]: before[p[1]][p[0]]}), pairs)))
-    # One call for every field; if it is refused, one per field to find which.
-    bodies = [{"id": b, f: before[b][f]} for f, _, b in pairs]
-    if attempt(update_lines, client, bodies):
-        al_err = dict(zip(fields, pmap(lambda body: attempt(update_lines, client, [body]), bodies)))
-    else:
-        al_err = {}
+    # One call for every field but the known gaps, which updateLines refuses; if that call is
+    # refused too, one call per field to find which.
+    bodies = {f: {"id": b, f: before[b][f]} for f, _, b in pairs}
+    gaps = [f for f in fields if f"same {f}" in KNOWN_GAPS]
+    rest = [f for f in fields if f not in gaps]
+    singly = gaps + rest if attempt(update_lines, client, [bodies[f] for f in rest]) else gaps
+    al_err = dict(zip(singly, pmap(lambda f: attempt(update_lines, client, [bodies[f]]), singly)))
     after = client.read_many(ids)
     ok = True
     for f, a, b in pairs:
@@ -211,7 +212,12 @@ def run(key):
         if created and client:
             print(f"\ncleanup: deleting {len(created)} lines")
             try:
-                left = client.delete_each(created)
+                # One deleteLines call for the lines still in the batch, then the moved ones.
+                batch = client.line_ids()
+                here = [i for i in created if i in batch]
+                if here:
+                    client.delete(here)
+                left = client.delete_each([i for i in created if i not in here])
             except (RuntimeError, SystemExit) as e:
                 left = created
                 print(f"  {e}")

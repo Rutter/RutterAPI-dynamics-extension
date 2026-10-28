@@ -78,7 +78,7 @@ not evidence: several customer realms carry CRONUS-style demo names.
 
 1. **The build under test must be installed on both environments.** The suite checks the
    installed version and refuses to run below `MIN_EXTENSION_VERSION` in `harness.py`
-   (currently 22.5.0.46 — bump it when a new block ships). It cannot tell you whether *your*
+   (currently 22.5.0.47 — bump it when a new block ships). It cannot tell you whether *your*
    build is the one installed, only that something recent enough is. Installing is manual: build in
    VS Code, upload through Extension Management on each environment.
 2. **rutter-backend's dev server must be running**, so the suite can mint its own BC tokens

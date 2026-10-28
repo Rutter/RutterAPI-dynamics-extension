@@ -701,14 +701,19 @@ codeunit 71692577 "RTR Journal Line Mgt"
         for i := 1 to Members.Count do
             if UpperCase(Members.Get(i).Trim()) = UpperCase(Value.Trim()) then begin
                 // An enum's position is not its ordinal once it has gaps or localization values.
-                if FldRef.IsEnum() then
-                    Ordinal := FldRef.GetEnumValueOrdinal(i)
-                else
+                if not TryEnumValueOrdinal(FldRef, i, Ordinal) then
                     Ordinal := i - 1;
                 exit(true);
             end;
 
         exit(false);
+    end;
+
+    // FieldRef.IsEnum needs runtime 12; a plain option field makes GetEnumValueOrdinal fail instead.
+    [TryFunction]
+    local procedure TryEnumValueOrdinal(var FldRef: FieldRef; Index: Integer; var Ordinal: Integer)
+    begin
+        Ordinal := FldRef.GetEnumValueOrdinal(Index);
     end;
 
     // The exact spelling of a key the ordered path consumes. A near miss is rejected rather

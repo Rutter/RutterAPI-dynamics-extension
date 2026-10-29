@@ -9,6 +9,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Set per line so the value helpers can name the offending line without every one of
         // them taking an index they otherwise have no use for.
         CurrentLineIndex: Integer;
+        // UpdateLines mirrors BC's PATCH on page 6407 more strictly than CreateLines does today.
+        MatchPatchRules: Boolean;
 
     trigger OnRun()
     begin
@@ -129,6 +131,76 @@ codeunit 71692577 "RTR Journal Line Mgt"
         CreatedIds.WriteTo(CreatedIdsJson);
     end;
 
+    // Modifies existing lines in place, keeping their identity: only the keys sent are applied,
+    // in CreateLines' field order, before one Modify() per line. Any Error() rolls back every line.
+    procedure UpdateLines(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LinesJson: Text) UpdatedCount: Integer
+    var
+        LinesArray: JsonArray;
+        LineToken: JsonToken;
+        LineIndex: Integer;
+    begin
+        if not LinesArray.ReadFrom(LinesJson) then
+            Error('Invalid lines payload: could not parse JSON.');
+
+        if LinesArray.Count = 0 then
+            Error('At least one line must be provided.');
+
+        if AnyLineHasTaxOverride(LinesArray) then
+            EnableVatDifference(JournalTemplateName);
+
+        MatchPatchRules := true;
+        foreach LineToken in LinesArray do begin
+            LineIndex += 1;
+            UpdateSingleLine(JournalTemplateName, JournalBatchName, LineToken.AsObject(), LineIndex);
+            UpdatedCount += 1;
+        end;
+    end;
+
+    local procedure UpdateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer)
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+        LineIdText: Text;
+        LineId: Guid;
+        NewTemplateName: Text;
+        NewBatchName: Text;
+        NewLineNo: Integer;
+    begin
+        CurrentLineIndex := LineIndex;
+        if not GetText(LineObject, 'id', LineIdText) then
+            Error('Line %1: "id" is required.', LineIndex);
+        if not Evaluate(LineId, LineIdText) then
+            Error('Line %1: invalid line id %2.', LineIndex, LineIdText);
+        // Identifies the line; the remaining keys are the update.
+        LineObject.Remove('id');
+
+        GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
+        GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
+        GenJournalLine.SetRange(SystemId, LineId);
+        if not GenJournalLine.FindFirst() then
+            Error('Line %1: journal line %2 not found in batch %3.', LineIndex, LineId, JournalBatchName);
+
+        // Page 6407's PATCH renames the line when any key field changes, moving it between batches.
+        if not GetText(LineObject, 'journalTemplateName', NewTemplateName) then
+            NewTemplateName := GenJournalLine."Journal Template Name";
+        if not GetText(LineObject, 'journalBatchName', NewBatchName) then
+            NewBatchName := GenJournalLine."Journal Batch Name";
+        if not GetInt(LineObject, 'lineNumber', NewLineNo) then
+            NewLineNo := GenJournalLine."Line No.";
+        // Code fields store uppercase, so a lowercase resend of the same batch is not a rename.
+        if (UpperCase(NewTemplateName) <> GenJournalLine."Journal Template Name") or (UpperCase(NewBatchName) <> GenJournalLine."Journal Batch Name") or
+           (NewLineNo <> GenJournalLine."Line No.")
+        then begin
+            GenJournalLine.Rename(
+                FitText(NewTemplateName, 'journalTemplateName', MaxStrLen(GenJournalLine."Journal Template Name")),
+                FitText(NewBatchName, 'journalBatchName', MaxStrLen(GenJournalLine."Journal Batch Name")),
+                NewLineNo);
+            GenJournalLine.UpdateJournalBatchID();
+        end;
+
+        ApplyLineFields(GenJournalLine, LineObject, LineIndex);
+        GenJournalLine.Modify(true);
+    end;
+
     // Applies a custom tax amount to a line. "VAT Amount" is the underlying storage field for
     // both VAT (non-US) and Sales Tax (US/NA) — BC picks the label by localization.
     // We bypass Validate("VAT Amount") because the journal batch context (Allow VAT Difference)
@@ -160,13 +232,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
     // Field order here is the point of this codeunit — see the ordering notes inline.
     local procedure CreateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer; var GenJournalLine: Record "Gen. Journal Line")
     var
-        SnapshotLine: Record "Gen. Journal Line";
-        TextValue: Text;
-        DecValue: Decimal;
         IntValue: Integer;
-        BoolValue: Boolean;
-        DateValue: Date;
-        GuidValue: Guid;
     begin
         CurrentLineIndex := LineIndex;
         GenJournalLine.Init();
@@ -181,6 +247,21 @@ codeunit 71692577 "RTR Journal Line Mgt"
         else
             GenJournalLine."Line No." := NextLineNo(JournalTemplateName, JournalBatchName);
 
+        ApplyLineFields(GenJournalLine, LineObject, LineIndex);
+        GenJournalLine.Insert(true);
+    end;
+
+    // Shared by CreateLines and UpdateLines so both apply fields in the same order.
+    local procedure ApplyLineFields(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
+    var
+        SnapshotLine: Record "Gen. Journal Line";
+        AccountType: Enum "Gen. Journal Account Type";
+        TextValue: Text;
+        DecValue: Decimal;
+        BoolValue: Boolean;
+        DateValue: Date;
+        GuidValue: Guid;
+    begin
         if GetText(LineObject, 'documentNumber', TextValue) then
             GenJournalLine.Validate("Document No.", FitText(TextValue, 'documentNumber', MaxStrLen(GenJournalLine."Document No.")));
         if GetText(LineObject, 'externalDocumentNumber', TextValue) then
@@ -188,8 +269,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         // Account type before account number, both validated, in the same transaction: this is
         // what removes the backend's two-step PATCH for bank accounts.
-        if GetText(LineObject, 'accountType', TextValue) then
-            GenJournalLine.Validate("Account Type", ParseAccountType(TextValue, 'accountType', LineIndex));
+        // PATCH skips an unchanged type; validating it anyway clears the account already on the line.
+        if GetText(LineObject, 'accountType', TextValue) then begin
+            AccountType := ParseAccountType(TextValue, 'accountType', LineIndex);
+            if not (MatchPatchRules and (AccountType = GenJournalLine."Account Type")) then
+                GenJournalLine.Validate("Account Type", AccountType);
+        end;
         TextValue := ResolveAccountNo(LineObject, 'accountNumber', 'accountId', GenJournalLine."Account Type", LineIndex);
         if TextValue <> '' then begin
             SnapshotLine := GenJournalLine;
@@ -201,8 +286,8 @@ codeunit 71692577 "RTR Journal Line Mgt"
             // that have always had them.
             if not HasValue(LineObject, 'accountNumber') then
                 RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
-            // Both paths: the backend's number PATCH resends the description, so it never kept the account name.
-            if not HasValue(LineObject, 'description') then
+            // CreateLines: the backend's number PATCH resent the description. UpdateLines: let BC fill it, like PATCH.
+            if not HasValue(LineObject, 'description') and not MatchPatchRules then
                 GenJournalLine.Description := SnapshotLine.Description;
         end;
 
@@ -216,8 +301,11 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if GetText(LineObject, 'description', TextValue) then
             GenJournalLine.Validate(Description, FitText(TextValue, 'description', MaxStrLen(GenJournalLine.Description)));
 
-        if GetText(LineObject, 'balAccountType', TextValue) then
-            GenJournalLine.Validate("Bal. Account Type", ParseAccountType(TextValue, 'balAccountType', LineIndex));
+        if GetText(LineObject, 'balAccountType', TextValue) then begin
+            AccountType := ParseAccountType(TextValue, 'balAccountType', LineIndex);
+            if not (MatchPatchRules and (AccountType = GenJournalLine."Bal. Account Type")) then
+                GenJournalLine.Validate("Bal. Account Type", AccountType);
+        end;
         TextValue := ResolveAccountNo(LineObject, 'balAccountNumber', 'balancingAccountId', GenJournalLine."Bal. Account Type", LineIndex);
         if TextValue <> '' then begin
             GenJournalLine.Validate("Bal. Account No.", FitText(TextValue, 'balAccountNumber', MaxStrLen(GenJournalLine."Bal. Account No.")));
@@ -292,8 +380,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Last: every validate above recalculates the VAT amount BC computed for itself.
         if GetDecimal(LineObject, 'RTRVATAmountAPI', DecValue) then
             ApplyVatAmountOverride(GenJournalLine, DecValue);
-
-        GenJournalLine.Insert(true);
     end;
 
     // Puts back what validating Account No. copied off the account (see GetGLAccount in
@@ -415,18 +501,59 @@ codeunit 71692577 "RTR Journal Line Mgt"
             Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
 
         // Validating Journal Batch Id would move the line out of the bound batch; the id is BC's to assign.
-        if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then
-            Error('Line %1: field "%2" cannot be set; lines are created in the batch the action is called on.', LineIndex, FieldKey);
+        if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then begin
+            // PATCH accepts the line's own batch id sent back unchanged.
+            if MatchPatchRules and IsUnchangedValue(RecRef, FieldKey, ValueToken) then
+                exit;
+            Error('Line %1: field "%2" cannot be set; the line belongs to the batch the action is called on.', LineIndex, FieldKey);
+        end;
 
         // Same fields the OData page accepts, including page extensions installed on this tenant.
         if not FindPageControl(FieldKey, PageControlField) then
             Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
 
+        if MatchPatchRules then begin
+            // PATCH ignores system fields (lastModifiedDatetime) and only validates a field whose value changes.
+            if PageControlField.FieldNo >= 2000000000 then
+                exit;
+            if IsUnchangedValue(RecRef, FieldKey, ValueToken) then
+                exit;
+            // Only a literal false is caught; an expression-based Editable is treated as editable.
+            if UpperCase(PageControlField.Editable) = 'FALSE' then
+                Error('Control ''%1'' is read-only.', FieldKey);
+        end;
+
         if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
-            Error('Line %1: field "%2" is a page field with no journal line field behind it, so createLines cannot set it.', LineIndex, FieldKey);
+            Error('Line %1: field "%2" is a page field with no journal line field behind it, so this action cannot set it.', LineIndex, FieldKey);
 
         FldRef := RecRef.Field(PageControlField.FieldNo);
         SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
+    end;
+
+    local procedure IsUnchangedValue(var RecRef: RecordRef; FieldKey: Text; ValueToken: JsonToken): Boolean
+    var
+        PageControlField: Record "Page Control Field";
+        FldRef: FieldRef;
+        GuidValue: Guid;
+        Ordinal: Integer;
+    begin
+        if not FindPageControl(FieldKey, PageControlField) then
+            exit(false);
+        if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
+            exit(false);
+        if ValueToken.AsValue().IsNull() then
+            exit(false);
+
+        FldRef := RecRef.Field(PageControlField.FieldNo);
+        case FldRef.Type of
+            // XML format renders an option as its ordinal, the request sends its name.
+            FieldType::Option:
+                exit(FindOptionOrdinal(FldRef, ValueToken.AsValue().AsText(), Ordinal) and
+                     (Format(FldRef.Value, 0, 9) = Format(Ordinal, 0, 9)));
+            FieldType::Guid:
+                exit(Evaluate(GuidValue, ValueToken.AsValue().AsText()) and (Format(FldRef.Value) = Format(GuidValue)));
+        end;
+        exit(Format(FldRef.Value, 0, 9) = ValueToken.AsValue().AsText());
     end;
 
     local procedure FindPageControl(FieldKey: Text; var PageControlField: Record "Page Control Field"): Boolean
@@ -539,7 +666,16 @@ codeunit 71692577 "RTR Journal Line Mgt"
         MemberList: Text;
         Member: Text;
         i: Integer;
+        Ordinal: Integer;
     begin
+        // Validating the member name fails ("can't be evaluated into type Option"); CreateLines keeps that path for now.
+        if MatchPatchRules then begin
+            if not FindOptionOrdinal(FldRef, Value, Ordinal) then
+                Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, FldRef.OptionMembers);
+            FldRef.Validate(Ordinal);
+            exit;
+        end;
+
         MemberList := FldRef.OptionMembers;
         Members := MemberList.Split(',');
         foreach Member in Members do
@@ -550,6 +686,38 @@ codeunit 71692577 "RTR Journal Line Mgt"
             end;
 
         Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, MemberList);
+    end;
+
+    local procedure FindOptionOrdinal(var FldRef: FieldRef; Value: Text; var Ordinal: Integer): Boolean
+    var
+        Members: List of [Text];
+        Captions: List of [Text];
+        MemberList: Text;
+        CaptionList: Text;
+        i: Integer;
+    begin
+        MemberList := FldRef.OptionMembers;
+        Members := MemberList.Split(',');
+        // The page reads and writes captions, which localizations rename ("Normal VAT" is "Normal Tax" in the US).
+        CaptionList := FldRef.OptionCaption;
+        Captions := CaptionList.Split(',');
+        for i := 1 to Members.Count do
+            if (UpperCase(Members.Get(i).Trim()) = UpperCase(Value.Trim())) or
+               ((i <= Captions.Count) and (UpperCase(Captions.Get(i).Trim()) = UpperCase(Value.Trim()))) then begin
+                // An enum's position is not its ordinal once it has gaps or localization values.
+                if not TryEnumValueOrdinal(FldRef, i, Ordinal) then
+                    Ordinal := i - 1;
+                exit(true);
+            end;
+
+        exit(false);
+    end;
+
+    // FieldRef.IsEnum needs runtime 12; a plain option field makes GetEnumValueOrdinal fail instead.
+    [TryFunction]
+    local procedure TryEnumValueOrdinal(var FldRef: FieldRef; Index: Integer; var Ordinal: Integer)
+    begin
+        Ordinal := FldRef.GetEnumValueOrdinal(Index);
     end;
 
     // The exact spelling of a key the ordered path consumes. A near miss is rejected rather

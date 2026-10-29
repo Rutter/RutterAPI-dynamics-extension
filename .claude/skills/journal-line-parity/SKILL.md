@@ -1,6 +1,6 @@
 ---
 name: journal-line-parity
-description: Run the journal-line parity suite against both sandbox companies to verify the CreateLines AL block behaves exactly like the endpoint it replaces. MANDATORY after any change to CreateLines in the RTR Journal Line Mgt codeunit. Use when testing or verifying CreateLines, after building and installing a new AccountLink version, or when asked whether a CreateLines change is safe to ship. DeleteLines and PostLines have no suite yet.
+description: Run the journal-line parity suites against both sandbox companies to verify the CreateLines and UpdateLines AL blocks behave exactly like the endpoints they replace. MANDATORY after any change to CreateLines, UpdateLines or the field logic they share in the RTR Journal Line Mgt codeunit. Use when testing or verifying either block, after building and installing a new AccountLink version, or when asked whether a journal-line change is safe to ship. DeleteLines and PostLines have no suite yet.
 argument-hint: "[usa|uae|both]"
 allowed-tools: Bash(python3 testing/journal-lines/*) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
 ---
@@ -33,11 +33,11 @@ The "old way" half is a **hand-written replica** of rutter-backend's
 
 ## The rule
 
-**Any change to `CreateLines` (or the procedures it calls) in `src/codeunits/JournalLineManagement.al`
-requires a full green run on both companies before the build ships.** Not a subset, not one
-company. If you changed it and have not run this, the change is not verified.
-
-(Current scope is the CreateLines suite. Widen this rule as the other blocks get suites.)
+**Any change to `CreateLines`, `UpdateLines`, or the procedures they call in
+`src/codeunits/JournalLineManagement.al` requires a full green run of both suites on both
+companies before the build ships.** Not a subset, not one company. The two blocks share
+`ApplyLineFields`, so a change made for one can break the other. If you changed it and have
+not run both, the change is not verified.
 
 ## The declared test connections
 
@@ -77,9 +77,9 @@ not evidence: several customer realms carry CRONUS-style demo names.
 ## Before running
 
 1. **The build under test must be installed on both environments.** The suite checks the
-   version and refuses to run below `MIN_EXTENSION_VERSION` in `harness.py` (currently
-   22.5.0.38 — bump it when a new block ships). It cannot tell you whether *your* build is
-   the one installed, only that something recent enough is. Installing is manual: build in
+   installed version and refuses to run below `MIN_EXTENSION_VERSION` in `harness.py`
+   (currently 22.5.0.47 — bump it when a new block ships). It cannot tell you whether *your*
+   build is the one installed, only that something recent enough is. Installing is manual: build in
    VS Code, upload through Extension Management on each environment.
 2. **rutter-backend's dev server must be running**, so the suite can mint its own BC tokens
    from `/admin-ops/blessed-postman-platform-setup/<item_id>`. BC tokens expire after about
@@ -105,11 +105,44 @@ not evidence: several customer realms carry CRONUS-style demo names.
 ## Run
 
 ```bash
-python3 testing/journal-lines/parity.py both     # or: usa | uae
+testing/journal-lines/run_all.sh <log dir>             # both suites, both companies
+python3 testing/journal-lines/parity.py usa            # CreateLines, one company
+python3 testing/journal-lines/update_parity.py usa     # UpdateLines, one company
 ```
 
-Takes about 10 minutes for both companies. Run it in the background and read the output file
-rather than blocking.
+`run_all.sh` runs the two companies in parallel and the two suites one after the other (they
+share a batch), writing `update_<company>.log` and `create_<company>.log`. Cases run on 4
+threads (`WORKERS` in `harness.py`; keep it low, BC Online throttles concurrent requests per
+user). It exits non-zero unless all four suites pass. Run it in the background and read the
+logs rather than blocking.
+
+The UpdateLines suite ends with a **sweep**: each page 6407 field sent back with the value the
+line already holds, through both paths. PATCH leaves the line alone, so `updateLines` must too.
+It found 22.5.0.45's fix (validating an unchanged account type cleared the account),
+22.5.0.46's (option fields, read-only options and `journalBatchId` sent back unchanged) and
+22.5.0.47's (option captions, which localizations rename, and unchanged fields such as
+`vatAmount` being validated at all).
+
+## The UpdateLines suite
+
+Each case creates two identical lines with `createLines`, updates one the way
+`updateTopLevelJournalLine` in rutter-backend's `strategies/updateJournalLines.ts` does (one
+PATCH, or with a type change: the other fields first, then the account numbers with the
+currency fields resent) and the other through `updateLines`, then compares the two. The same
+drift caveat as above applies to that replica, `legacy_update`.
+
+- **Shapes are not harvested.** Dynamics had no PATCH /expenses or /journal_entries traffic to
+  sample (checked 2026-10-28: zero in `production_logged_requests`, zero `updateJournalLines`
+  logs in 90 days of Datadog). The updates are what the expense update mapper can send for the
+  top-level line; the starting lines follow the real expense creates. See `update_shapes.py`.
+- **BC rules** compare single PATCHes against `updateLines`: read-only controls, system
+  fields, `journalBatchId`, `lineNumber` renames, and moving a line to another batch (the
+  first other batch on the company; the move cases are skipped if there is none).
+- **Known gap**, reported as `PASS … (known gap …)`: page-only controls such as `rtrTestVar`,
+  in the rules and in the sweep.
+  BC accepts them through a page trigger; AL cannot run one, so `updateLines` refuses them.
+- **Cleanup** uses one `deleteLines` call for the lines still in the batch, then deletes the
+  moved ones by id over OData, since they have left the batch `deleteLines` is bound to.
 
 ## Reading the output
 
@@ -140,8 +173,7 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
 
 ## Traps
 
-- **BC tokens last about an hour.** Enough for one full run, not two. A mid-run 401 kills the
-  company being tested; re-run it.
+- **BC tokens last about an hour.** `Client.call` mints a fresh one on a 401 and retries once.
 - **A crashed run leaves lines behind** — cleanup is the last step. Before re-running, list
   the batch and delete them, or the failure-case row counts are meaningless:
   ```bash
@@ -150,7 +182,8 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
   ```
 - **One run per company at a time.** Failure cases diff the batch's line ids before and after
   each call, so a second run writing to the same batch shows up as leftovers, and its cleanup
-  deletes the other run's lines.
+  deletes the other run's lines. That is why failure cases stay sequential and run after the
+  threaded sections, and why `run_all.sh` never runs two suites on one company at once.
 - **`pkill -f "yarn dev:web"` leaves the `ts-node src/index.ts` child holding the port.** Kill
   that pid too, and confirm with `curl localhost:$PORT/health`. Stopping the server is not in
   this skill's allowed tools — ask before killing processes.
@@ -164,8 +197,8 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
   ```
   That attribute holds the complete request body the backend sent. Retarget it to the sandbox
   accounts and add it to `shapes()` with a comment naming its source.
-- **A new operation** (UpdateLine, ReplaceLines) is a sibling of `parity.py` importing
-  `harness` and `shapes`: supply its own "old way" / "new way" pair and its own accepted map.
+- **A new operation** (ReplaceLines) is a sibling of `parity.py` and `update_parity.py`
+  importing `harness`: supply its own "old way" / "new way" pair and its own shapes file.
   `SetDimensions` additionally needs a comparator for the `dimensionSetLines` sub-collection —
   the flat 174-field diff does not cover it.
 - **When the swaps roll out** the legacy OData path stops being production, and A/B against it

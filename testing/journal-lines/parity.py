@@ -13,7 +13,7 @@ Usage: parity.py [usa|uae|both]
 """
 import json, sys
 
-from harness import CONFIG, Client, check_version, diff, line_no, print, resolve
+from harness import CONFIG, Client, check_version, diff, line_no, pmap, print, resolve
 from shapes import ACCEPTED, bank_deposit_lines, failure_payloads, shapes
 
 # Live on the extension's overrides page, not page 6407 — the backend strips them from the
@@ -134,22 +134,26 @@ def run(key):
         check_version(client)
         fx = resolve(client)
 
-        print("\nparity shapes:")
-        for name, payload in shapes(cfg, fx):
+        def shape(item):
+            name, payload = item
             try:
                 legacy_id = legacy_create(client, dict(payload), created)
                 al_id = al_create(client, [dict(payload)])[0]
                 created.append(al_id)
                 al_line = client.read(al_id)
-                passed &= diff(name, client.read(legacy_id), al_line, ACCEPTED)
+                ok = diff(name, client.read(legacy_id), al_line, ACCEPTED)
                 # Values the AL line must hold whatever legacy does.
                 for k, want in payload.get("_expect", {}).items():
                     if al_line.get(k) != want:
                         print(f"  FAIL  {name}: AL {k}={al_line.get(k)!r}, expected {want!r}")
-                        passed = False
+                        ok = False
+                return ok
             except RuntimeError as e:
                 print(f"  ERROR {name}: {e}")
-                passed = False
+                return False
+
+        print("\nparity shapes:")
+        passed &= all(pmap(shape, shapes(cfg, fx)))
 
         print("\nbatch stress:")
         passed &= bank_deposit_batch(client, cfg, created)
@@ -164,7 +168,7 @@ def run(key):
             print(f"\ncleanup: deleting {len(created)} lines")
             try:
                 client.delete(created)
-            except RuntimeError as e:
+            except (RuntimeError, SystemExit) as e:
                 print(f"  CLEANUP FAILED, {len(created)} lines left in {cfg['batch_name']}: {e}")
                 print("  delete them before the next run — see the skill's Traps section")
                 passed = False

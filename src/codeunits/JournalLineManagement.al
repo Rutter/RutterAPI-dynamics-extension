@@ -286,8 +286,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             // that have always had them.
             if not HasValue(LineObject, 'accountNumber') then
                 RestoreAccountDefaults(GenJournalLine, SnapshotLine, LineObject);
-            // Both paths: the backend's number PATCH resends the description, so it never kept the account name.
-            // PATCH lets BC fill a blanked description with the account name, so updates skip this.
+            // CreateLines: the backend's number PATCH resent the description. UpdateLines: let BC fill it, like PATCH.
             if not HasValue(LineObject, 'description') and not MatchPatchRules then
                 GenJournalLine.Description := SnapshotLine.Description;
         end;
@@ -519,6 +518,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 exit;
             if IsUnchangedValue(RecRef, FieldKey, ValueToken) then
                 exit;
+            // Only a literal false is caught; an expression-based Editable is treated as editable.
             if UpperCase(PageControlField.Editable) = 'FALSE' then
                 Error('Control ''%1'' is read-only.', FieldKey);
         end;

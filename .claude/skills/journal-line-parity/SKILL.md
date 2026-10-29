@@ -112,13 +112,16 @@ python3 testing/journal-lines/update_parity.py usa     # UpdateLines, one compan
 
 `run_all.sh` runs the two companies in parallel and the two suites one after the other (they
 share a batch), writing `update_<company>.log` and `create_<company>.log`. Cases run on 4
-threads (`WORKERS` in `harness.py`; BC Online queues more than about 5 concurrent requests per
-user). Run it in the background and read the logs rather than blocking.
+threads (`WORKERS` in `harness.py`; keep it low, BC Online throttles concurrent requests per
+user). It exits non-zero unless all four suites pass. Run it in the background and read the
+logs rather than blocking.
 
 The UpdateLines suite ends with a **sweep**: each page 6407 field sent back with the value the
 line already holds, through both paths. PATCH leaves the line alone, so `updateLines` must too.
-It found 22.5.0.45's fix (validating an unchanged account type cleared the account) and
-22.5.0.46's (option fields, read-only options and `journalBatchId` sent back unchanged).
+It found 22.5.0.45's fix (validating an unchanged account type cleared the account),
+22.5.0.46's (option fields, read-only options and `journalBatchId` sent back unchanged) and
+22.5.0.47's (option captions, which localizations rename, and unchanged fields such as
+`vatAmount` being validated at all).
 
 ## The UpdateLines suite
 
@@ -138,8 +141,8 @@ drift caveat as above applies to that replica, `legacy_update`.
 - **Known gap**, reported as `PASS … (known gap …)`: page-only controls such as `rtrTestVar`,
   in the rules and in the sweep.
   BC accepts them through a page trigger; AL cannot run one, so `updateLines` refuses them.
-- **Cleanup deletes each line by id** over OData, because moved lines have left the batch
-  `deleteLines` is bound to.
+- **Cleanup** uses one `deleteLines` call for the lines still in the batch, then deletes the
+  moved ones by id over OData, since they have left the batch `deleteLines` is bound to.
 
 ## Reading the output
 

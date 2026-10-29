@@ -85,7 +85,7 @@ CONFIG = {
 IGNORED = {"id", "lineNumber", "@odata.etag", "@odata.context", "lastModifiedDatetime",
            "systemCreatedAt", "systemModifiedAt"}
 
-# BC Online queues more than about 5 concurrent requests per user; stay under it.
+# Keep it low: BC Online throttles concurrent requests per user.
 WORKERS = 4
 
 
@@ -170,7 +170,7 @@ class Client:
         except RuntimeError as e:
             if not retry:
                 raise
-            # A refused connection never reached BC, so even a POST is safe to resend.
+            # Failed while connecting or sending, so BC never processed it; even a POST is safe to resend.
             if str(e).startswith(f"{method} connect error"):
                 return self.call(method, url, body, retry=False)
             # A run outlives the hour a BC token lasts; mint one and retry once.

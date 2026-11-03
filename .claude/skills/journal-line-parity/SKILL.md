@@ -118,10 +118,6 @@ logs rather than blocking.
 
 The UpdateLines suite ends with a **sweep**: each page 6407 field sent back with the value the
 line already holds, through both paths. PATCH leaves the line alone, so `updateLines` must too.
-It found 22.5.0.45's fix (validating an unchanged account type cleared the account),
-22.5.0.46's (option fields, read-only options and `journalBatchId` sent back unchanged) and
-22.5.0.47's (option captions, which localizations rename, and unchanged fields such as
-`vatAmount` being validated at all).
 
 ## The UpdateLines suite
 

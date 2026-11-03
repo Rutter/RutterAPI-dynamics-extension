@@ -5,7 +5,8 @@ Everything here is operation-agnostic: the two sandbox companies, the HTTP clien
 lookup, the field-by-field diff and cleanup. A suite for a specific AL block (see parity.py
 for CreateLines) imports this and supplies only its own "old way" / "new way" pair.
 """
-import builtins, functools, json, os, socket, sys, urllib.error, urllib.parse, urllib.request, uuid
+import builtins, functools, json, os, socket, sys, threading, urllib.error, urllib.parse, urllib.request, uuid
+from concurrent.futures import ThreadPoolExecutor
 
 print = functools.partial(builtins.print, flush=True)
 
@@ -28,7 +29,7 @@ socket.getaddrinfo = _bc_prefer_ipv4
 
 # Refuse to test a build older than this. Bump it when a new block ships; a stale extension
 # otherwise reports green against code that isn't there.
-MIN_EXTENSION_VERSION = (22, 5, 0, 38)
+MIN_EXTENSION_VERSION = (22, 5, 0, 47)
 
 # The declared test connections — the only ones this suite may ever touch. Adding an entry
 # here is the act of declaring a connection safe to write to; anything not listed is assumed
@@ -83,6 +84,15 @@ CONFIG = {
 # Only the identity fields can legitimately differ between two separate lines.
 IGNORED = {"id", "lineNumber", "@odata.etag", "@odata.context", "lastModifiedDatetime",
            "systemCreatedAt", "systemModifiedAt"}
+
+# Keep it low: BC Online throttles concurrent requests per user.
+WORKERS = 4
+
+
+def pmap(fn, items):
+    """fn over items on WORKERS threads, results in input order."""
+    with ThreadPoolExecutor(WORKERS) as pool:
+        return list(pool.map(fn, items))
 
 
 def load_token(cfg):
@@ -147,15 +157,34 @@ class Client:
     def __init__(self, cfg):
         self.cfg = cfg
         self.token = load_token(cfg)
+        self.lock = threading.Lock()
         self.odata = (f"{BASE}/{cfg['env']}/ODataV4/"
                       f"Company('{urllib.parse.quote(cfg['company_name'])}')")
         self.rutter = f"{BASE}/{cfg['env']}/api/Rutter/RutterAPI/v2.0/companies({cfg['company_id']})"
         self.std = f"{BASE}/{cfg['env']}/api/v2.0/companies({cfg['company_id']})"
 
-    def call(self, method, url, body=None):
+    def call(self, method, url, body=None, retry=True):
+        token = self.token
+        try:
+            return self._call(method, url, body, token)
+        except RuntimeError as e:
+            if not retry:
+                raise
+            # Failed while connecting or sending, so BC never processed it; even a POST is safe to resend.
+            if str(e).startswith(f"{method} connect error"):
+                return self.call(method, url, body, retry=False)
+            # A run outlives the hour a BC token lasts; mint one and retry once.
+            if not str(e).startswith(f"{method} 401"):
+                raise
+            with self.lock:
+                if self.token == token:
+                    self.token = load_token(self.cfg)
+            return self.call(method, url, body, retry=False)
+
+    def _call(self, method, url, body, token):
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(url, data=data, method=method)
-        req.add_header("Authorization", "Bearer " + self.token)
+        req.add_header("Authorization", "Bearer " + token)
         req.add_header("Content-Type", "application/json")
         if method == "PATCH":
             req.add_header("If-Match", "*")
@@ -165,7 +194,9 @@ class Client:
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"{method} {e.code}: {e.read().decode()[:400]}")
-        except (urllib.error.URLError, OSError) as e:
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"{method} connect error: {e}")
+        except OSError as e:
             raise RuntimeError(f"{method} network error: {e}")
 
     def action(self, name, body):
@@ -176,6 +207,15 @@ class Client:
     def read(self, line_id):
         return self.call("GET", f"{self.odata}/workflowGenJournalLines({line_id})")
 
+    def read_many(self, ids):
+        """{id: line} in GETs of 40, whichever batch each line is in now."""
+        out = {}
+        for i in range(0, len(ids), 40):
+            f = " or ".join(f"id eq {x}" for x in ids[i:i + 40])
+            url = f"{self.odata}/workflowGenJournalLines?$filter={f}"
+            out.update((l["id"], l) for l in self.call("GET", urllib.parse.quote(url, safe=":/?&=$'"))["value"])
+        return out
+
     def line_ids(self):
         url = (f"{self.odata}/workflowGenJournalLines?$filter=journalBatchName eq "
                f"'{self.cfg['batch_name']}' and journalTemplateName eq 'GENERAL'&$select=id")
@@ -183,6 +223,17 @@ class Client:
 
     def delete(self, ids):
         self.action("deleteLines", {"lineIdsJson": json.dumps(ids)})
+
+    def delete_each(self, ids):
+        """One DELETE per line, wherever it is now. deleteLines only reaches this batch, and
+        the update suite moves lines out of it. Returns the ids that could not be deleted."""
+        def gone(line_id):
+            try:
+                self.call("DELETE", f"{self.odata}/workflowGenJournalLines({line_id})")
+            except RuntimeError as e:
+                return " 404" in str(e)
+            return True
+        return [i for i, ok in zip(ids, pmap(gone, ids)) if not ok]
 
 
 def check_version(client):
@@ -192,7 +243,8 @@ def check_version(client):
     url = (f"{BASE}/{cfg['env']}/api/microsoft/automation/v2.0/"
            f"companies({cfg['company_id']})/extensions")
     for e in client.call("GET", url).get("value", []):
-        if "AccountLink" in (e.get("displayName") or ""):
+        # Every uploaded version stays listed; only the installed one is under test.
+        if "AccountLink" in (e.get("displayName") or "") and e.get("isInstalled"):
             got = (e.get("versionMajor"), e.get("versionMinor"),
                    e.get("versionBuild"), e.get("versionRevision"))
             dotted = ".".join(str(n) for n in got)
@@ -233,13 +285,12 @@ def diff(name, a, b, accepted_map):
            for k in sorted((set(a) | set(b)) - IGNORED) if a.get(k) != b.get(k)]
     accepted = accepted_map.get(name, set())
     unexpected = [d for d in out if d[0] not in accepted]
+    # One print per case: cases run on several threads.
     if not out:
         print(f"  PASS  {name}")
     elif not unexpected:
         print(f"  PASS  {name}  (known: {', '.join(sorted(k for k, _, _ in out))})")
     else:
-        print(f"  DIFF  {name}")
-        for k, old, new in out:
-            tag = "known " if k in accepted else ""
-            print(f"        {tag}{k}: legacy={old!r}  al={new!r}")
+        print("\n".join([f"  DIFF  {name}"] + [f"        {'known ' if k in accepted else ''}{k}: legacy={old!r}  al={new!r}"
+                                                for k, old, new in out]))
     return not unexpected

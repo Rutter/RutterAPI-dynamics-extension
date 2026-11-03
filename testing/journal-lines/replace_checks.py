@@ -64,6 +64,11 @@ def run_checks(client, cfg, created):
     created.extend(ids)
     ok &= check("created line reuses the deleted line's number", client.read(ids[0])["lineNumber"] == number)
 
+    dead, target = create(client, base, created, 2)
+    number = client.read(dead)["lineNumber"]
+    replace(client, delete=[dead], update=[{"id": target, "lineNumber": number}])
+    ok &= check("renamed line reuses the deleted line's number", client.read(target)["lineNumber"] == number)
+
     bad = dict(new, accountType="G/L Account", accountNumber="NOPE")
     for name, part in [("create part fails", {"new": [new, bad]}),
                        ("update part fails", {"update_bad": True}),
@@ -106,7 +111,8 @@ def run(key):
         passed = False
     finally:
         if created and client:
-            left = [i for i in created if i in client.line_ids()]
+            batch = client.line_ids()
+            left = [i for i in created if i in batch]
             print(f"\ncleanup: deleting {len(left)} lines")
             try:
                 if left:

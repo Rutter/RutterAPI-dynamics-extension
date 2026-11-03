@@ -99,6 +99,21 @@ page 71692592 "RTR Journal Batch Actions API"
         exit(JournalLineMgt.UpdateLines(Rec."Journal Template Name", Rec.Name, LinesJson));
     end;
 
+    // Deletes, updates and creates lines in this batch in a single atomic call — see
+    // JournalLineManagement.al. Each part takes its own block's payload and may be "" or "[]".
+    // Returns the created lines' ids as a JSON array, in input order.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.replaceLines
+    //   Body: { "deleteLineIdsJson": "[\"<id>\"]", "updateLinesJson": "[{\"id\":\"<id>\",\"amount\":10}]", "createLinesJson": "[]" }
+    [ServiceEnabled]
+    procedure replaceLines(DeleteLineIdsJson: Text; UpdateLinesJson: Text; CreateLinesJson: Text): Text
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        exit(JournalLineMgt.ReplaceLines(Rec."Journal Template Name", Rec.Name, DeleteLineIdsJson, UpdateLinesJson, CreateLinesJson));
+    end;
+
     // Posts only the given lines, not the whole batch — see JournalLineManagement.al.
     [ServiceEnabled]
     procedure postLines(LineIdsJson: Text): Integer

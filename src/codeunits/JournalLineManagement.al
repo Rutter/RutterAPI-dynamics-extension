@@ -156,6 +156,34 @@ codeunit 71692577 "RTR Journal Line Mgt"
         end;
     end;
 
+    // DeleteLines, UpdateLines and CreateLines in one transaction, in that order, so new and
+    // renamed lines can reuse deleted line numbers. Each part may be empty. Returns the created ids.
+    procedure ReplaceLines(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; DeleteLineIdsJson: Text; UpdateLinesJson: Text; CreateLinesJson: Text) CreatedIdsJson: Text
+    begin
+        if IsEmptyList(DeleteLineIdsJson) and IsEmptyList(UpdateLinesJson) and IsEmptyList(CreateLinesJson) then
+            Error('At least one line to delete, update or create must be provided.');
+
+        if not IsEmptyList(DeleteLineIdsJson) then
+            DeleteLines(JournalTemplateName, JournalBatchName, DeleteLineIdsJson);
+        if not IsEmptyList(UpdateLinesJson) then
+            UpdateLines(JournalTemplateName, JournalBatchName, UpdateLinesJson);
+        // UpdateLines leaves PATCH rules on; created lines must behave exactly as in CreateLines.
+        MatchPatchRules := false;
+        CreatedIdsJson := '[]';
+        if not IsEmptyList(CreateLinesJson) then
+            CreatedIdsJson := CreateLines(JournalTemplateName, JournalBatchName, CreateLinesJson);
+    end;
+
+    // Unparseable JSON counts as non-empty, so the part's own block reports it.
+    local procedure IsEmptyList(Json: Text): Boolean
+    var
+        LinesArray: JsonArray;
+    begin
+        if Json.Trim() = '' then
+            exit(true);
+        exit(LinesArray.ReadFrom(Json) and (LinesArray.Count = 0));
+    end;
+
     local procedure UpdateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer)
     var
         GenJournalLine: Record "Gen. Journal Line";

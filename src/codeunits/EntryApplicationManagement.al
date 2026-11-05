@@ -18,19 +18,11 @@ codeunit 71692576 "RTR Entry Application Mgt"
     // application when driven via PATCH.
     procedure ApplyCreditMemoToBills(CreditMemoVendLedgEntry: Record "Vendor Ledger Entry"; BillsJson: Text)
     var
-        BillVendLedgEntry: Record "Vendor Ledger Entry";
+        TempMarkedBill: Record "Vendor Ledger Entry" temporary;
         ApplyUnapplyParameters: Record "Apply Unapply Parameters" temporary;
         VendEntryApplyPostedEntries: Codeunit "VendEntry-Apply Posted Entries";
-        BillsArray: JsonArray;
-        BillToken: JsonToken;
-        BillObject: JsonObject;
-        DocNoToken: JsonToken;
-        AmountToken: JsonToken;
-        DocumentNumber: Code[20];
-        AmountToApply: Decimal;
         TotalAmountToApply: Decimal;
         ApplyId: Code[50];
-        SeenBillEntryNos: Record "Integer" temporary;
     begin
         if CreditMemoVendLedgEntry."Document Type" <> CreditMemoVendLedgEntry."Document Type"::"Credit Memo" then
             Error('Vendor Ledger Entry %1 is not a Credit Memo.', CreditMemoVendLedgEntry."Entry No.");
@@ -38,48 +30,8 @@ codeunit 71692576 "RTR Entry Application Mgt"
         if not CreditMemoVendLedgEntry.Open then
             Error('Credit Memo %1 is not open.', CreditMemoVendLedgEntry."Document No.");
 
-        if not BillsArray.ReadFrom(BillsJson) then
-            Error('Invalid bills payload: could not parse JSON.');
-
-        if BillsArray.Count = 0 then
-            Error('At least one bill must be provided.');
-
         ApplyId := Format(CreditMemoVendLedgEntry."Entry No.");
-
-        foreach BillToken in BillsArray do begin
-            BillObject := BillToken.AsObject();
-            if not BillObject.Get('documentNumber', DocNoToken) then
-                Error('Each bill entry requires a documentNumber.');
-            if not BillObject.Get('amountToApply', AmountToken) then
-                Error('Each bill entry requires an amountToApply.');
-
-            DocumentNumber := CopyStr(DocNoToken.AsValue().AsText(), 1, MaxStrLen(DocumentNumber));
-            AmountToApply := AmountToken.AsValue().AsDecimal();
-
-            if AmountToApply <= 0 then
-                Error('Bill %1 amountToApply must be greater than zero.', DocumentNumber);
-
-            BillVendLedgEntry.Reset();
-            BillVendLedgEntry.SetRange("Vendor No.", CreditMemoVendLedgEntry."Vendor No.");
-            BillVendLedgEntry.SetRange("Document Type", BillVendLedgEntry."Document Type"::Invoice);
-            BillVendLedgEntry.SetRange("Document No.", DocumentNumber);
-            if not BillVendLedgEntry.FindFirst() then
-                Error('Bill %1 not found for vendor %2.', DocumentNumber, CreditMemoVendLedgEntry."Vendor No.");
-            if not BillVendLedgEntry.Open then
-                Error('Bill %1 is not open.', DocumentNumber);
-
-            if BillVendLedgEntry."Currency Code" <> CreditMemoVendLedgEntry."Currency Code" then
-                Error('Bill %1 currency (%2) does not match Credit Memo currency (%3).', DocumentNumber, BillVendLedgEntry."Currency Code", CreditMemoVendLedgEntry."Currency Code");
-
-            if not TryCacheEntryNo(SeenBillEntryNos, BillVendLedgEntry."Entry No.") then
-                Error('Bill %1 was specified more than once.', DocumentNumber);
-
-            BillVendLedgEntry."Applies-to ID" := ApplyId;
-            BillVendLedgEntry."Amount to Apply" := -AmountToApply;
-            BillVendLedgEntry.Modify();
-
-            TotalAmountToApply += AmountToApply;
-        end;
+        TotalAmountToApply := MarkBillsForApplication(CreditMemoVendLedgEntry, 'Credit Memo', BillsJson, ApplyId, false, TempMarkedBill);
 
         // Apply() silently no-ops if the anchor's own Amount to Apply is 0.
         CreditMemoVendLedgEntry."Applies-to ID" := ApplyId;
@@ -88,6 +40,184 @@ codeunit 71692576 "RTR Entry Application Mgt"
 
         ApplyUnapplyParameters.CopyFromVendLedgEntry(CreditMemoVendLedgEntry);
         VendEntryApplyPostedEntries.Apply(CreditMemoVendLedgEntry, ApplyUnapplyParameters);
+    end;
+
+    // Posts a vendor payment journal line, then applies it to several bills with an exact amount
+    // each; the standard API can only apply a bill's full balance. Everything shares one
+    // transaction, so any Error() here also rolls back the posted payment.
+    procedure PostPaymentAndApplyToBills(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdText: Text; BillsJson: Text) PaymentEntryId: Text
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+        PaymentVendLedgEntry: Record "Vendor Ledger Entry";
+        BillVendLedgEntry: Record "Vendor Ledger Entry";
+        TempMarkedBill: Record "Vendor Ledger Entry" temporary;
+        ApplyUnapplyParameters: Record "Apply Unapply Parameters" temporary;
+        VendEntryApplyPostedEntries: Codeunit "VendEntry-Apply Posted Entries";
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+        SuppressApplyCommit: Codeunit "RTR Suppress Apply Commit";
+        RemainingBefore: Dictionary of [Integer, Decimal];
+        LineId: Guid;
+        LastEntryNo: Integer;
+        TotalAmountToApply: Decimal;
+        ApplyId: Code[50];
+    begin
+        if not Evaluate(LineId, LineIdText) then
+            Error('Invalid line id: %1.', LineIdText);
+
+        GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
+        GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
+        GenJournalLine.SetRange(SystemId, LineId);
+        if not GenJournalLine.FindFirst() then
+            Error('Journal line %1 not found in batch %2.', LineId, JournalBatchName);
+
+        if GenJournalLine."Account Type" <> GenJournalLine."Account Type"::Vendor then
+            Error('Journal line %1 is not a vendor line.', LineId);
+        if GenJournalLine."Document Type" <> GenJournalLine."Document Type"::Payment then
+            Error('Journal line %1 is not a payment.', LineId);
+        if GenJournalLine.Amount <= 0 then
+            Error('Journal line %1 amount must be greater than zero.', LineId);
+        // A native application would post with the line and ignore our per-bill amounts.
+        if (GenJournalLine."Applies-to Doc. No." <> '') or (GenJournalLine."Applies-to ID" <> '') then
+            Error('Journal line %1 must not have Applies-to set.', LineId);
+
+        // The payment entry doesn't exist yet, so bills are checked against the line's vendor and
+        // currency, and marked with the line's unique id, before anything is posted.
+        ApplyId := Format(LineId, 0, 4);
+        PaymentVendLedgEntry."Vendor No." := GenJournalLine."Account No.";
+        PaymentVendLedgEntry."Currency Code" := GenJournalLine."Currency Code";
+        TotalAmountToApply := MarkBillsForApplication(PaymentVendLedgEntry, 'Payment', BillsJson, ApplyId, true, TempMarkedBill);
+
+        if TotalAmountToApply <> GenJournalLine.Amount then
+            Error('Bill amounts (%1) must add up to the payment amount (%2).', TotalAmountToApply, GenJournalLine.Amount);
+
+        TempMarkedBill.FindSet();
+        repeat
+            if TempMarkedBill."Applies-to ID" <> '' then
+                Error('Bill %1 is already marked for another application (%2).', TempMarkedBill."Document No.", TempMarkedBill."Applies-to ID");
+            // FlowFields don't survive a temporary table, so read the live balance here.
+            BillVendLedgEntry.Get(TempMarkedBill."Entry No.");
+            BillVendLedgEntry.CalcFields("Remaining Amount");
+            if TempMarkedBill."Amount to Apply" > Abs(BillVendLedgEntry."Remaining Amount") then
+                Error('Bill %1 amountToApply (%2) is more than its remaining amount (%3).', TempMarkedBill."Document No.", TempMarkedBill."Amount to Apply", Abs(BillVendLedgEntry."Remaining Amount"));
+            RemainingBefore.Add(TempMarkedBill."Entry No.", BillVendLedgEntry."Remaining Amount");
+        until TempMarkedBill.Next() = 0;
+
+        PaymentVendLedgEntry.Reset();
+        if PaymentVendLedgEntry.FindLast() then
+            LastEntryNo := PaymentVendLedgEntry."Entry No.";
+
+        JournalLineMgt.PostLines(JournalTemplateName, JournalBatchName, StrSubstNo('["%1"]', Format(LineId, 0, 4)));
+
+        PaymentVendLedgEntry.Reset();
+        PaymentVendLedgEntry.SetFilter("Entry No.", '>%1', LastEntryNo);
+        PaymentVendLedgEntry.SetRange("Vendor No.", GenJournalLine."Account No.");
+        PaymentVendLedgEntry.SetRange("Document Type", PaymentVendLedgEntry."Document Type"::Payment);
+        PaymentVendLedgEntry.SetRange("Document No.", GenJournalLine."Document No.");
+        if PaymentVendLedgEntry.Count <> 1 then
+            Error('Expected one posted payment entry for document %1, found %2.', GenJournalLine."Document No.", PaymentVendLedgEntry.Count);
+        PaymentVendLedgEntry.FindFirst();
+
+        PaymentVendLedgEntry."Applies-to ID" := ApplyId;
+        PaymentVendLedgEntry."Amount to Apply" := TotalAmountToApply;
+        PaymentVendLedgEntry.Modify();
+
+        // Apply() commits on its own; suppressed so the checks below can still roll everything back.
+        BindSubscription(SuppressApplyCommit);
+        ApplyUnapplyParameters.CopyFromVendLedgEntry(PaymentVendLedgEntry);
+        if not VendEntryApplyPostedEntries.Apply(PaymentVendLedgEntry, ApplyUnapplyParameters) then
+            Error('Business Central declined the application of payment %1.', PaymentVendLedgEntry."Document No.");
+        UnbindSubscription(SuppressApplyCommit);
+
+        // BC can close a bill in full instead (payment discount, tolerance); reject that.
+        TempMarkedBill.FindSet();
+        repeat
+            BillVendLedgEntry.Get(TempMarkedBill."Entry No.");
+            BillVendLedgEntry.CalcFields("Remaining Amount");
+            if BillVendLedgEntry."Remaining Amount" - RemainingBefore.Get(TempMarkedBill."Entry No.") <> TempMarkedBill."Amount to Apply" then
+                Error('Bill %1 was applied %2 instead of %3.', TempMarkedBill."Document No.", BillVendLedgEntry."Remaining Amount" - RemainingBefore.Get(TempMarkedBill."Entry No."), TempMarkedBill."Amount to Apply");
+        until TempMarkedBill.Next() = 0;
+
+        PaymentVendLedgEntry.Get(PaymentVendLedgEntry."Entry No.");
+        PaymentVendLedgEntry.CalcFields("Remaining Amount");
+        if PaymentVendLedgEntry."Remaining Amount" <> 0 then
+            Error('Payment %1 was not fully applied; %2 remains.', PaymentVendLedgEntry."Document No.", PaymentVendLedgEntry."Remaining Amount");
+
+        PaymentEntryId := LowerCase(Format(PaymentVendLedgEntry.SystemId, 0, 4));
+    end;
+
+    // Finds each bill, checks it against the anchor entry and marks it with ApplyId. TempMarkedBill
+    // gets each bill as it was before marking, with the requested amount in "Amount to Apply".
+    // ByEntryNumber identifies bills by ledger entry number; document numbers can repeat.
+    local procedure MarkBillsForApplication(AnchorVendLedgEntry: Record "Vendor Ledger Entry"; AnchorLabel: Text; BillsJson: Text; ApplyId: Code[50]; ByEntryNumber: Boolean; var TempMarkedBill: Record "Vendor Ledger Entry" temporary) TotalAmountToApply: Decimal
+    var
+        BillVendLedgEntry: Record "Vendor Ledger Entry";
+        BillsArray: JsonArray;
+        BillToken: JsonToken;
+        BillObject: JsonObject;
+        DocNoToken: JsonToken;
+        EntryNoToken: JsonToken;
+        AmountToken: JsonToken;
+        DocumentNumber: Code[20];
+        EntryNo: Integer;
+        AmountToApply: Decimal;
+    begin
+        if not BillsArray.ReadFrom(BillsJson) then
+            Error('Invalid bills payload: could not parse JSON.');
+
+        if BillsArray.Count = 0 then
+            Error('At least one bill must be provided.');
+
+        foreach BillToken in BillsArray do begin
+            BillObject := BillToken.AsObject();
+            if ByEntryNumber then begin
+                if not BillObject.Get('entryNumber', EntryNoToken) then
+                    Error('Each bill entry requires an entryNumber.');
+                EntryNo := EntryNoToken.AsValue().AsInteger();
+                if not BillVendLedgEntry.Get(EntryNo) then
+                    Error('Bill entry %1 not found.', EntryNo);
+                if (BillVendLedgEntry."Vendor No." <> AnchorVendLedgEntry."Vendor No.") or
+                   (BillVendLedgEntry."Document Type" <> BillVendLedgEntry."Document Type"::Invoice)
+                then
+                    Error('Bill entry %1 is not an invoice for vendor %2.', EntryNo, AnchorVendLedgEntry."Vendor No.");
+                DocumentNumber := BillVendLedgEntry."Document No.";
+            end else
+                if not BillObject.Get('documentNumber', DocNoToken) then
+                    Error('Each bill entry requires a documentNumber.');
+            if not BillObject.Get('amountToApply', AmountToken) then
+                Error('Each bill entry requires an amountToApply.');
+
+            if not ByEntryNumber then
+                DocumentNumber := CopyStr(DocNoToken.AsValue().AsText(), 1, MaxStrLen(DocumentNumber));
+            AmountToApply := AmountToken.AsValue().AsDecimal();
+
+            if AmountToApply <= 0 then
+                Error('Bill %1 amountToApply must be greater than zero.', DocumentNumber);
+
+            if not ByEntryNumber then begin
+                BillVendLedgEntry.Reset();
+                BillVendLedgEntry.SetRange("Vendor No.", AnchorVendLedgEntry."Vendor No.");
+                BillVendLedgEntry.SetRange("Document Type", BillVendLedgEntry."Document Type"::Invoice);
+                BillVendLedgEntry.SetRange("Document No.", DocumentNumber);
+                if not BillVendLedgEntry.FindFirst() then
+                    Error('Bill %1 not found for vendor %2.', DocumentNumber, AnchorVendLedgEntry."Vendor No.");
+            end;
+            if not BillVendLedgEntry.Open then
+                Error('Bill %1 is not open.', DocumentNumber);
+
+            if BillVendLedgEntry."Currency Code" <> AnchorVendLedgEntry."Currency Code" then
+                Error('Bill %1 currency (%2) does not match %3 currency (%4).', DocumentNumber, BillVendLedgEntry."Currency Code", AnchorLabel, AnchorVendLedgEntry."Currency Code");
+
+            TempMarkedBill := BillVendLedgEntry;
+            TempMarkedBill."Amount to Apply" := AmountToApply;
+            if not TempMarkedBill.Insert() then
+                Error('Bill %1 was specified more than once.', DocumentNumber);
+
+            BillVendLedgEntry."Applies-to ID" := ApplyId;
+            BillVendLedgEntry."Amount to Apply" := -AmountToApply;
+            BillVendLedgEntry.Modify();
+
+            TotalAmountToApply += AmountToApply;
+        end;
     end;
 
     procedure GetAppliedCustEntries(var AppliedCustLedgEntry: Record "Cust. Ledger Entry" temporary; CustLedgEntry: Record "Cust. Ledger Entry"; UseLCY: Boolean)

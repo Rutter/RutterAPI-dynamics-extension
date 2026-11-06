@@ -99,7 +99,7 @@ page 71692592 "RTR Journal Batch Actions API"
     //
     // Call via:
     //   POST .../journalBatchActions({systemId})/Microsoft.NAV.postPaymentToBills
-    //   Body: { "lineId": "<lineSystemId>", "billsJson": "[{\"entryNumber\":4254,\"amountToApply\":50}]" }
+    //   Body: { "lineId": "<lineSystemId>", "billsJson": "[{\"billId\":\"<purchaseInvoiceId>\",\"amountToApply\":50}]" }
     [ServiceEnabled]
     procedure postPaymentToBills(LineId: Text; BillsJson: Text): Text
     var

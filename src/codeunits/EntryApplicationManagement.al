@@ -42,9 +42,8 @@ codeunit 71692576 "RTR Entry Application Mgt"
         VendEntryApplyPostedEntries.Apply(CreditMemoVendLedgEntry, ApplyUnapplyParameters);
     end;
 
-    // Posts a vendor payment journal line, then applies it to several bills with an exact amount
-    // each; the standard API can only apply a bill's full balance. Everything shares one
-    // transaction, so any Error() here also rolls back the posted payment.
+    // Posts a payment line and applies exact amounts to several bills (the API only applies full balances).
+    // One transaction: any Error() here also rolls back the posted payment.
     procedure PostPaymentAndApplyToBills(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineIdText: Text; BillsJson: Text) PaymentEntryId: Text
     var
         GenJournalLine: Record "Gen. Journal Line";
@@ -145,20 +144,22 @@ codeunit 71692576 "RTR Entry Application Mgt"
         PaymentEntryId := LowerCase(Format(PaymentVendLedgEntry.SystemId, 0, 4));
     end;
 
-    // Finds each bill, checks it against the anchor entry and marks it with ApplyId. TempMarkedBill
-    // gets each bill as it was before marking, with the requested amount in "Amount to Apply".
-    // ByEntryNumber identifies bills by ledger entry number; document numbers can repeat.
-    local procedure MarkBillsForApplication(AnchorVendLedgEntry: Record "Vendor Ledger Entry"; AnchorLabel: Text; BillsJson: Text; ApplyId: Code[50]; ByEntryNumber: Boolean; var TempMarkedBill: Record "Vendor Ledger Entry" temporary) TotalAmountToApply: Decimal
+    // Checks each bill against the anchor and marks it with ApplyId; TempMarkedBill keeps the pre-mark copy.
+    // ByBillId: bills come as purchase invoice ids, resolved like vendorPayments.appliesToInvoiceId.
+    local procedure MarkBillsForApplication(AnchorVendLedgEntry: Record "Vendor Ledger Entry"; AnchorLabel: Text; BillsJson: Text; ApplyId: Code[50]; ByBillId: Boolean; var TempMarkedBill: Record "Vendor Ledger Entry" temporary) TotalAmountToApply: Decimal
     var
         BillVendLedgEntry: Record "Vendor Ledger Entry";
+        PurchInvHeader: Record "Purch. Inv. Header";
+        PurchInvAggregator: Codeunit "Purch. Inv. Aggregator";
         BillsArray: JsonArray;
         BillToken: JsonToken;
         BillObject: JsonObject;
         DocNoToken: JsonToken;
-        EntryNoToken: JsonToken;
+        BillIdToken: JsonToken;
         AmountToken: JsonToken;
         DocumentNumber: Code[20];
-        EntryNo: Integer;
+        BillId: Text;
+        BillGuid: Guid;
         AmountToApply: Decimal;
     begin
         if not BillsArray.ReadFrom(BillsJson) then
@@ -169,16 +170,22 @@ codeunit 71692576 "RTR Entry Application Mgt"
 
         foreach BillToken in BillsArray do begin
             BillObject := BillToken.AsObject();
-            if ByEntryNumber then begin
-                if not BillObject.Get('entryNumber', EntryNoToken) then
-                    Error('Each bill entry requires an entryNumber.');
-                EntryNo := EntryNoToken.AsValue().AsInteger();
-                if not BillVendLedgEntry.Get(EntryNo) then
-                    Error('Bill entry %1 not found.', EntryNo);
+            if ByBillId then begin
+                if not BillObject.Get('billId', BillIdToken) then
+                    Error('Each bill entry requires a billId.');
+                BillId := BillIdToken.AsValue().AsText();
+                // The lookup uses SetFilter, so only a parsed Guid may reach it.
+                if not Evaluate(BillGuid, BillId) then
+                    Error('Bill %1 is not a valid purchase invoice id.', BillId);
+                PurchInvHeader.Reset();
+                if not PurchInvAggregator.GetPurchaseInvoiceHeaderFromId(Format(BillGuid), PurchInvHeader) then
+                    Error('Bill %1 is not a posted purchase invoice.', BillId);
+                if not BillVendLedgEntry.Get(PurchInvHeader."Vendor Ledger Entry No.") then
+                    Error('Bill %1 has no vendor ledger entry.', PurchInvHeader."No.");
                 if (BillVendLedgEntry."Vendor No." <> AnchorVendLedgEntry."Vendor No.") or
                    (BillVendLedgEntry."Document Type" <> BillVendLedgEntry."Document Type"::Invoice)
                 then
-                    Error('Bill entry %1 is not an invoice for vendor %2.', EntryNo, AnchorVendLedgEntry."Vendor No.");
+                    Error('Bill %1 is not an invoice for vendor %2.', PurchInvHeader."No.", AnchorVendLedgEntry."Vendor No.");
                 DocumentNumber := BillVendLedgEntry."Document No.";
             end else
                 if not BillObject.Get('documentNumber', DocNoToken) then
@@ -186,14 +193,14 @@ codeunit 71692576 "RTR Entry Application Mgt"
             if not BillObject.Get('amountToApply', AmountToken) then
                 Error('Each bill entry requires an amountToApply.');
 
-            if not ByEntryNumber then
+            if not ByBillId then
                 DocumentNumber := CopyStr(DocNoToken.AsValue().AsText(), 1, MaxStrLen(DocumentNumber));
             AmountToApply := AmountToken.AsValue().AsDecimal();
 
             if AmountToApply <= 0 then
                 Error('Bill %1 amountToApply must be greater than zero.', DocumentNumber);
 
-            if not ByEntryNumber then begin
+            if not ByBillId then begin
                 BillVendLedgEntry.Reset();
                 BillVendLedgEntry.SetRange("Vendor No.", AnchorVendLedgEntry."Vendor No.");
                 BillVendLedgEntry.SetRange("Document Type", BillVendLedgEntry."Document Type"::Invoice);

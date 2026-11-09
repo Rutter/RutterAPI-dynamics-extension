@@ -93,4 +93,18 @@ page 71692592 "RTR Journal Batch Actions API"
     begin
         exit(JournalLineMgt.PostLines(Rec."Journal Template Name", Rec.Name, LineIdsJson));
     end;
+
+    // Posts one vendor payment line and applies it to several bills with an exact amount each —
+    // see EntryApplicationManagement.al. Returns the payment's vendor ledger entry id.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.postPaymentToBills
+    //   Body: { "lineId": "<lineSystemId>", "billsJson": "[{\"billId\":\"<purchaseInvoiceId>\",\"amountToApply\":50}]" }
+    [ServiceEnabled]
+    procedure postPaymentToBills(LineId: Text; BillsJson: Text): Text
+    var
+        EntryApplicationMgt: Codeunit "RTR Entry Application Mgt";
+    begin
+        exit(EntryApplicationMgt.PostPaymentAndApplyToBills(Rec."Journal Template Name", Rec.Name, LineId, BillsJson));
+    end;
 }

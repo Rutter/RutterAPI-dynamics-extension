@@ -1,5 +1,10 @@
 # Releases
 
+## v22.4.0.4 — 2026-11-09
+- File: Rutter_AccountLink_22.4.0.4.app (signed, Azure Trusted Signing)
+- Submitted to Partner Center for automated validation (~3+ business days)
+- Changes: postPaymentToBills action (FND-4220) to post one vendor payment line and apply exact amounts to several bills in one transaction, with BC's apply commits suppressed so any failure rolls the payment back; bill ids validated as GUIDs.
+
 ## v22.4.0.3 — 2026-10-06
 - File: Rutter_AccountLink_22.4.0.3.app (signed, Azure Trusted Signing)
 - Submitted to Partner Center for automated validation (~3+ business days)

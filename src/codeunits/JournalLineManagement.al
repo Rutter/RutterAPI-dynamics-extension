@@ -154,11 +154,13 @@ codeunit 71692577 "RTR Journal Line Mgt"
             UpdateSingleLine(JournalTemplateName, JournalBatchName, LineToken.AsObject(), LineIndex);
             UpdatedCount += 1;
         end;
+        MatchPatchRules := false;
     end;
 
     local procedure UpdateSingleLine(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LineObject: JsonObject; LineIndex: Integer)
     var
         GenJournalLine: Record "Gen. Journal Line";
+        GenJournalBatch: Record "Gen. Journal Batch";
         LineIdText: Text;
         LineId: Guid;
         NewTemplateName: Text;
@@ -190,10 +192,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
         if (UpperCase(NewTemplateName) <> GenJournalLine."Journal Template Name") or (UpperCase(NewBatchName) <> GenJournalLine."Journal Batch Name") or
            (NewLineNo <> GenJournalLine."Line No.")
         then begin
-            GenJournalLine.Rename(
-                FitText(NewTemplateName, 'journalTemplateName', MaxStrLen(GenJournalLine."Journal Template Name")),
-                FitText(NewBatchName, 'journalBatchName', MaxStrLen(GenJournalLine."Journal Batch Name")),
-                NewLineNo);
+            NewTemplateName := FitText(NewTemplateName, 'journalTemplateName', MaxStrLen(GenJournalLine."Journal Template Name"));
+            NewBatchName := FitText(NewBatchName, 'journalBatchName', MaxStrLen(GenJournalLine."Journal Batch Name"));
+            // Rename() skips the table relation, so an unknown batch would otherwise be accepted.
+            if not GenJournalBatch.Get(NewTemplateName, NewBatchName) then
+                Error('Line %1: journal batch %2 in template %3 not found.', LineIndex, NewBatchName, NewTemplateName);
+            GenJournalLine.Rename(NewTemplateName, NewBatchName, NewLineNo);
             GenJournalLine.UpdateJournalBatchID();
         end;
 
@@ -262,9 +266,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
         DateValue: Date;
         GuidValue: Guid;
     begin
-        if GetText(LineObject, 'documentNumber', TextValue) then
+        if GetText(LineObject, 'documentNumber', TextValue) and Changed(GenJournalLine, LineObject, 'documentNumber') then
             GenJournalLine.Validate("Document No.", FitText(TextValue, 'documentNumber', MaxStrLen(GenJournalLine."Document No.")));
-        if GetText(LineObject, 'externalDocumentNumber', TextValue) then
+        if GetText(LineObject, 'externalDocumentNumber', TextValue) and Changed(GenJournalLine, LineObject, 'externalDocumentNumber') then
             GenJournalLine.Validate("External Document No.", FitText(TextValue, 'externalDocumentNumber', MaxStrLen(GenJournalLine."External Document No.")));
 
         // Account type before account number, both validated, in the same transaction: this is
@@ -276,7 +280,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 GenJournalLine.Validate("Account Type", AccountType);
         end;
         TextValue := ResolveAccountNo(LineObject, 'accountNumber', 'accountId', GenJournalLine."Account Type", LineIndex);
-        if TextValue <> '' then begin
+        if (TextValue <> '') and not (MatchPatchRules and (TextValue = GenJournalLine."Account No.")) then begin
             SnapshotLine := GenJournalLine;
             GenJournalLine.Validate("Account No.", FitText(TextValue, 'accountNumber', MaxStrLen(GenJournalLine."Account No.")));
             // Only when the caller identified the account by id. The OData path assigns
@@ -293,12 +297,12 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         // After the account, never before: Due Date is derived here, and validating an account
         // afterwards clears it (page 6407 orders accountNumber then postingDate for the same reason).
-        if GetDate(LineObject, 'postingDate', DateValue, LineIndex) then
+        if GetDate(LineObject, 'postingDate', DateValue, LineIndex) and Changed(GenJournalLine, LineObject, 'postingDate') then
             GenJournalLine.Validate("Posting Date", DateValue);
 
         // Page 6407's own position for it: after the account, whose validate overwrites
         // Description with the account name.
-        if GetText(LineObject, 'description', TextValue) then
+        if GetText(LineObject, 'description', TextValue) and Changed(GenJournalLine, LineObject, 'description') then
             GenJournalLine.Validate(Description, FitText(TextValue, 'description', MaxStrLen(GenJournalLine.Description)));
 
         if GetText(LineObject, 'balAccountType', TextValue) then begin
@@ -307,7 +311,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 GenJournalLine.Validate("Bal. Account Type", AccountType);
         end;
         TextValue := ResolveAccountNo(LineObject, 'balAccountNumber', 'balancingAccountId', GenJournalLine."Bal. Account Type", LineIndex);
-        if TextValue <> '' then begin
+        if (TextValue <> '') and not (MatchPatchRules and (TextValue = GenJournalLine."Bal. Account No.")) then begin
             GenJournalLine.Validate("Bal. Account No.", FitText(TextValue, 'balAccountNumber', MaxStrLen(GenJournalLine."Bal. Account No.")));
             // The OData path validated a non-bank bal account while Account No. was still blank, so only
             // the bal account's default dimensions applied; a bank bal is PATCHed in later and gets both.
@@ -317,62 +321,62 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 RebuildDimensionsFromBalAccount(GenJournalLine);
         end;
 
-        if GetText(LineObject, 'currencyCode', TextValue) then
+        if GetText(LineObject, 'currencyCode', TextValue) and Changed(GenJournalLine, LineObject, 'currencyCode') then
             GenJournalLine.Validate("Currency Code", FitText(TextValue, 'currencyCode', MaxStrLen(GenJournalLine."Currency Code")));
 
         // Gen. Posting Type first: the VAT posting groups read it to resolve the VAT setup.
         // This is the ordering the backend cannot express in one OData request, which is why
         // it PATCHes the posting groups separately today.
-        if GetText(LineObject, 'genPostingType', TextValue) then
+        if GetText(LineObject, 'genPostingType', TextValue) and Changed(GenJournalLine, LineObject, 'genPostingType') then
             GenJournalLine.Validate("Gen. Posting Type", ParseGenPostingType(TextValue, 'genPostingType', LineIndex));
         // Before VAT Prod.: validating Gen. Prod. Posting Group resets it to the group's default.
-        if GetText(LineObject, 'genBusPostingGroup', TextValue) then
+        if GetText(LineObject, 'genBusPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'genBusPostingGroup') then
             GenJournalLine.Validate("Gen. Bus. Posting Group", FitText(TextValue, 'genBusPostingGroup', MaxStrLen(GenJournalLine."Gen. Bus. Posting Group")));
-        if GetText(LineObject, 'genProdPostingGroup', TextValue) then
+        if GetText(LineObject, 'genProdPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'genProdPostingGroup') then
             GenJournalLine.Validate("Gen. Prod. Posting Group", FitText(TextValue, 'genProdPostingGroup', MaxStrLen(GenJournalLine."Gen. Prod. Posting Group")));
-        if GetText(LineObject, 'vatBusPostingGroup', TextValue) then
+        if GetText(LineObject, 'vatBusPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'vatBusPostingGroup') then
             GenJournalLine.Validate("VAT Bus. Posting Group", FitText(TextValue, 'vatBusPostingGroup', MaxStrLen(GenJournalLine."VAT Bus. Posting Group")));
-        if GetText(LineObject, 'RTRVatBusPostingGroupAPI', TextValue) then
+        if GetText(LineObject, 'RTRVatBusPostingGroupAPI', TextValue) and Changed(GenJournalLine, LineObject, 'RTRVatBusPostingGroupAPI') then
             GenJournalLine.Validate("VAT Bus. Posting Group", FitText(TextValue, 'RTRVatBusPostingGroupAPI', MaxStrLen(GenJournalLine."VAT Bus. Posting Group")));
-        if GetText(LineObject, 'vatProdPostingGroup', TextValue) then
+        if GetText(LineObject, 'vatProdPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'vatProdPostingGroup') then
             GenJournalLine.Validate("VAT Prod. Posting Group", FitText(TextValue, 'vatProdPostingGroup', MaxStrLen(GenJournalLine."VAT Prod. Posting Group")));
         // The RTR override wins over vatProdPostingGroup: today it is applied in a later PATCH.
-        if GetText(LineObject, 'RTRVatProdPostingGroupAPI', TextValue) then
+        if GetText(LineObject, 'RTRVatProdPostingGroupAPI', TextValue) and Changed(GenJournalLine, LineObject, 'RTRVatProdPostingGroupAPI') then
             GenJournalLine.Validate("VAT Prod. Posting Group", FitText(TextValue, 'RTRVatProdPostingGroupAPI', MaxStrLen(GenJournalLine."VAT Prod. Posting Group")));
 
         // Same order on the balancing side: Bal. Gen. Prod. resets Bal. VAT Prod. to its default.
-        if GetText(LineObject, 'balGenPostingType', TextValue) then
+        if GetText(LineObject, 'balGenPostingType', TextValue) and Changed(GenJournalLine, LineObject, 'balGenPostingType') then
             GenJournalLine.Validate("Bal. Gen. Posting Type", ParseGenPostingType(TextValue, 'balGenPostingType', LineIndex));
-        if GetText(LineObject, 'balGenBusPostingGroup', TextValue) then
+        if GetText(LineObject, 'balGenBusPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'balGenBusPostingGroup') then
             GenJournalLine.Validate("Bal. Gen. Bus. Posting Group", FitText(TextValue, 'balGenBusPostingGroup', MaxStrLen(GenJournalLine."Bal. Gen. Bus. Posting Group")));
-        if GetText(LineObject, 'balGenProdPostingGroup', TextValue) then
+        if GetText(LineObject, 'balGenProdPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'balGenProdPostingGroup') then
             GenJournalLine.Validate("Bal. Gen. Prod. Posting Group", FitText(TextValue, 'balGenProdPostingGroup', MaxStrLen(GenJournalLine."Bal. Gen. Prod. Posting Group")));
-        if GetText(LineObject, 'balVatBusPostingGroup', TextValue) then
+        if GetText(LineObject, 'balVatBusPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'balVatBusPostingGroup') then
             GenJournalLine.Validate("Bal. VAT Bus. Posting Group", FitText(TextValue, 'balVatBusPostingGroup', MaxStrLen(GenJournalLine."Bal. VAT Bus. Posting Group")));
-        if GetText(LineObject, 'balVatProdPostingGroup', TextValue) then
+        if GetText(LineObject, 'balVatProdPostingGroup', TextValue) and Changed(GenJournalLine, LineObject, 'balVatProdPostingGroup') then
             GenJournalLine.Validate("Bal. VAT Prod. Posting Group", FitText(TextValue, 'balVatProdPostingGroup', MaxStrLen(GenJournalLine."Bal. VAT Prod. Posting Group")));
 
-        if GetText(LineObject, 'taxAreaCode', TextValue) then
+        if GetText(LineObject, 'taxAreaCode', TextValue) and Changed(GenJournalLine, LineObject, 'taxAreaCode') then
             GenJournalLine.Validate("Tax Area Code", FitText(TextValue, 'taxAreaCode', MaxStrLen(GenJournalLine."Tax Area Code")));
-        if GetText(LineObject, 'taxGroupCode', TextValue) then
+        if GetText(LineObject, 'taxGroupCode', TextValue) and Changed(GenJournalLine, LineObject, 'taxGroupCode') then
             GenJournalLine.Validate("Tax Group Code", FitText(TextValue, 'taxGroupCode', MaxStrLen(GenJournalLine."Tax Group Code")));
-        if GetBoolean(LineObject, 'taxLiable', BoolValue) then
+        if GetBoolean(LineObject, 'taxLiable', BoolValue) and Changed(GenJournalLine, LineObject, 'taxLiable') then
             GenJournalLine.Validate("Tax Liable", BoolValue);
 
-        if GetDecimal(LineObject, 'amount', DecValue) then
+        if GetDecimal(LineObject, 'amount', DecValue) and Changed(GenJournalLine, LineObject, 'amount') then
             GenJournalLine.Validate(Amount, DecValue);
         // After Amount: RTRCurrencyFactorAPI is an addlast page extension field, so BC applies
         // it last today, recomputing the LCY amounts from the factor.
-        if GetDecimal(LineObject, 'RTRCurrencyFactorAPI', DecValue) then
+        if GetDecimal(LineObject, 'RTRCurrencyFactorAPI', DecValue) and Changed(GenJournalLine, LineObject, 'RTRCurrencyFactorAPI') then
             GenJournalLine.Validate("Currency Factor", DecValue);
 
         if GetText(LineObject, 'comment', TextValue) then
             GenJournalLine.Comment := FitText(TextValue, 'comment', MaxStrLen(GenJournalLine.Comment));
-        if GetText(LineObject, 'sourceType', TextValue) then
+        if GetText(LineObject, 'sourceType', TextValue) and Changed(GenJournalLine, LineObject, 'sourceType') then
             GenJournalLine.Validate("Source Type", ParseSourceType(TextValue, LineIndex));
         // Last of the account fields, as on page 6407: validating it overwrites Account No.
         // with the customer's number.
-        if GetGuid(LineObject, 'customerId', GuidValue, LineIndex) then
+        if GetGuid(LineObject, 'customerId', GuidValue, LineIndex) and Changed(GenJournalLine, LineObject, 'customerId') then
             GenJournalLine.Validate("Customer Id", GuidValue);
 
         ApplyExtraFields(GenJournalLine, LineObject, LineIndex);
@@ -528,6 +532,18 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         FldRef := RecRef.Field(PageControlField.FieldNo);
         SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
+    end;
+
+    // PATCH only validates a field whose value changes; updateLines does the same for the ordered fields.
+    local procedure Changed(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; FieldKey: Text): Boolean
+    var
+        RecRef: RecordRef;
+        ValueToken: JsonToken;
+    begin
+        if not MatchPatchRules or not LineObject.Get(FieldKey, ValueToken) then
+            exit(true);
+        RecRef.GetTable(GenJournalLine);
+        exit(not IsUnchangedValue(RecRef, FieldKey, ValueToken));
     end;
 
     local procedure IsUnchangedValue(var RecRef: RecordRef; FieldKey: Text; ValueToken: JsonToken): Boolean

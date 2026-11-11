@@ -83,11 +83,25 @@ def run_checks(client, cfg, created):
             err = None
         except RuntimeError as e:
             err = str(e)
-        after = {i: client.read(i) for i in before}
-        changed = [k for i in before for k, v in before[i].items() if k != "@odata.etag" and after[i].get(k) != v]
+        # A line the failed call deleted anyway reads as a 404; count it as changed instead of aborting.
+        after = {i: None if gone(client, i) else client.read(i) for i in before}
+        changed = [k for i in before for k, v in before[i].items() if k != "@odata.etag" and (after[i] or {}).get(k) != v]
         same_ids = client.line_ids() == before_ids
         ok &= check(f"{name}: everything rolled back", bool(err) and not changed and same_ids,
                     f"err={err and err[:150]} changed={changed} same_ids={same_ids}")
+
+    # Both parts number their lines from 1, so the error names the part; the standalone action is unchanged.
+    target = create(client, base, created)
+    for name, call, want in [
+            ("update part", lambda: replace(client, update=[{"id": target, "nope": 1}]), "Update line 1"),
+            ("create part", lambda: replace(client, new=[dict(new, nope=1)]), "Create line 1"),
+            ("standalone updateLines", lambda: update_lines(client, [{"id": target, "nope": 1}]), "Line 1")]:
+        try:
+            call()
+            err = "accepted"
+        except RuntimeError as e:
+            err = str(e)
+        ok &= check(f"{name}: error starts with {want!r}", f'"{want}: field' in err, err[:200])
 
     for empty in ("[]", ""):
         try:

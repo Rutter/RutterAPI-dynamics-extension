@@ -30,5 +30,5 @@ token per company and there is no fallback.
 | `replace_checks.py` | ReplaceLines checks: each part matches its own block, any failing part rolls back all three |
 | `run_all.sh` | every suite on both companies, companies in parallel |
 
-A suite for another block (ReplaceLines) is a sibling of these importing `harness.py`. Not CI:
+A suite for a new block is a sibling of these importing `harness.py`. Not CI:
 live tenant, real credentials.

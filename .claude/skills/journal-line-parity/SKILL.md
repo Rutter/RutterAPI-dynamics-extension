@@ -2,7 +2,7 @@
 name: journal-line-parity
 description: Run the journal-line parity suites against both sandbox companies to verify the CreateLines and UpdateLines AL blocks behave exactly like the endpoints they replace. MANDATORY after any change to CreateLines, UpdateLines or the field logic they share in the RTR Journal Line Mgt codeunit. Use when testing or verifying either block, after building and installing a new AccountLink version, or when asked whether a journal-line change is safe to ship. DeleteLines and PostLines have no suite yet.
 argument-hint: "[usa|uae|both]"
-allowed-tools: Bash(python3 testing/journal-lines/*) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
+allowed-tools: Bash(python3 testing/journal-lines/*) Bash(testing/journal-lines/run_all.sh *) Bash(yarn dev:web) Bash(ps *) Read Glob Grep
 ---
 
 # Journal-line parity suite
@@ -78,7 +78,7 @@ not evidence: several customer realms carry CRONUS-style demo names.
 
 1. **The build under test must be installed on both environments.** The suite checks the
    installed version and refuses to run below `MIN_EXTENSION_VERSION` in `harness.py`
-   (currently 22.5.0.47 — bump it when a new block ships). It cannot tell you whether *your*
+   (bump it when a new block ships). It cannot tell you whether *your*
    build is the one installed, only that something recent enough is. Installing is manual: build in
    VS Code, upload through Extension Management on each environment.
 2. **rutter-backend's dev server must be running**, so the suite can mint its own BC tokens

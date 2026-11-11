@@ -1,6 +1,7 @@
 #!/bin/sh
 # Both suites on both companies. Companies run in parallel; the two suites share a batch, so
 # they run one after the other. Logs go to $1 (default: current directory).
+mkdir -p "${1:-.}"
 out=$(realpath "${1:-.}")
 cd "$(dirname "$0")"
 rm -f "$out/failed"

@@ -5,7 +5,7 @@ Everything here is operation-agnostic: the two sandbox companies, the HTTP clien
 lookup, the field-by-field diff and cleanup. A suite for a specific AL block (see parity.py
 for CreateLines) imports this and supplies only its own "old way" / "new way" pair.
 """
-import builtins, functools, json, os, socket, sys, threading, urllib.error, urllib.parse, urllib.request, uuid
+import builtins, errno, functools, json, os, socket, sys, threading, urllib.error, urllib.parse, urllib.request, uuid
 from concurrent.futures import ThreadPoolExecutor
 
 print = functools.partial(builtins.print, flush=True)
@@ -170,7 +170,7 @@ class Client:
         except RuntimeError as e:
             if not retry:
                 raise
-            # Failed while connecting or sending, so BC never processed it; even a POST is safe to resend.
+            # The connection never opened (see _call), so BC never saw it; even a POST is safe to resend.
             if str(e).startswith(f"{method} connect error"):
                 return self.call(method, url, body, retry=False)
             # A run outlives the hour a BC token lasts; mint one and retry once.
@@ -195,7 +195,10 @@ class Client:
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"{method} {e.code}: {e.read().decode()[:400]}")
         except urllib.error.URLError as e:
-            raise RuntimeError(f"{method} connect error: {e}")
+            # Only a connection that never opened is safe to resend; after that, BC may have the request.
+            unopened = (isinstance(e.reason, (ConnectionRefusedError, socket.gaierror))
+                        or getattr(e.reason, "errno", None) in (errno.ENETUNREACH, errno.EHOSTUNREACH))
+            raise RuntimeError(f"{method} {'connect error' if unopened else 'network error'}: {e}")
         except OSError as e:
             raise RuntimeError(f"{method} network error: {e}")
 

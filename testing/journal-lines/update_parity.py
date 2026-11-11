@@ -60,6 +60,8 @@ def short(err):
 
 
 def compare(client, name, legacy_err, al_err, legacy_id, al_id):
+    if name in KNOWN_GAPS and not al_err:
+        print(f"  NOTE  {name}: updateLines accepts it now; remove it from KNOWN_GAPS")
     if legacy_err or al_err:
         if name in KNOWN_GAPS and al_err and not legacy_err:
             print(f"  PASS  {name}  (known gap: BC accepts, updateLines refuses)")

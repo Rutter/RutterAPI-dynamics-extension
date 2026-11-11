@@ -171,7 +171,8 @@ class Client:
             if not retry:
                 raise
             # The connection never opened (see _call), so BC never saw it; even a POST is safe to resend.
-            if str(e).startswith(f"{method} connect error"):
+            # A read is safe to resend after any network error.
+            if str(e).startswith(f"{method} connect error") or (method == "GET" and " network error" in str(e)):
                 return self.call(method, url, body, retry=False)
             # A run outlives the hour a BC token lasts; mint one and retry once.
             if not str(e).startswith(f"{method} 401"):
@@ -196,8 +197,9 @@ class Client:
             raise RuntimeError(f"{method} {e.code}: {e.read().decode()[:400]}")
         except urllib.error.URLError as e:
             # Only a connection that never opened is safe to resend; after that, BC may have the request.
+            # Errno 110 is the kernel giving up on the TCP handshake; a timeout after connecting has no errno.
             unopened = (isinstance(e.reason, (ConnectionRefusedError, socket.gaierror))
-                        or getattr(e.reason, "errno", None) in (errno.ENETUNREACH, errno.EHOSTUNREACH))
+                        or getattr(e.reason, "errno", None) in (errno.ENETUNREACH, errno.EHOSTUNREACH, errno.ETIMEDOUT))
             raise RuntimeError(f"{method} {'connect error' if unopened else 'network error'}: {e}")
         except OSError as e:
             raise RuntimeError(f"{method} network error: {e}")

@@ -11,6 +11,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         CurrentLineIndex: Integer;
         // UpdateLines mirrors BC's PATCH on page 6407 more strictly than CreateLines does today.
         MatchPatchRules: Boolean;
+        LinePart: Text;
 
     trigger OnRun()
     begin
@@ -166,11 +167,23 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         if not IsEmptyList(DeleteLineIdsJson) then
             DeleteLines(JournalTemplateName, JournalBatchName, DeleteLineIdsJson);
+        // Both parts number their lines from 1, so errors name the part.
+        LinePart := 'Update';
         if not IsEmptyList(UpdateLinesJson) then
             UpdateLines(JournalTemplateName, JournalBatchName, UpdateLinesJson);
+        LinePart := 'Create';
         CreatedIdsJson := '[]';
         if not IsEmptyList(CreateLinesJson) then
             CreatedIdsJson := CreateLines(JournalTemplateName, JournalBatchName, CreateLinesJson);
+        LinePart := '';
+    end;
+
+    // "Line 2" from the standalone actions; "Update line 2" / "Create line 2" inside ReplaceLines.
+    local procedure LineRef(LineIndex: Integer): Text
+    begin
+        if LinePart = '' then
+            exit(StrSubstNo('Line %1', LineIndex));
+        exit(StrSubstNo('%1 line %2', LinePart, LineIndex));
     end;
 
     // Unparseable JSON counts as non-empty, so the part's own block reports it.
@@ -195,9 +208,9 @@ codeunit 71692577 "RTR Journal Line Mgt"
     begin
         CurrentLineIndex := LineIndex;
         if not GetText(LineObject, 'id', LineIdText) then
-            Error('Line %1: "id" is required.', LineIndex);
+            Error('%1: "id" is required.', LineRef(LineIndex));
         if not Evaluate(LineId, LineIdText) then
-            Error('Line %1: invalid line id %2.', LineIndex, LineIdText);
+            Error('%1: invalid line id %2.', LineRef(LineIndex), LineIdText);
         // Identifies the line; the remaining keys are the update.
         LineObject.Remove('id');
 
@@ -205,7 +218,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
         GenJournalLine.SetRange(SystemId, LineId);
         if not GenJournalLine.FindFirst() then
-            Error('Line %1: journal line %2 not found in batch %3.', LineIndex, LineId, JournalBatchName);
+            Error('%1: journal line %2 not found in batch %3.', LineRef(LineIndex), LineId, JournalBatchName);
 
         // Page 6407's PATCH renames the line when any key field changes, moving it between batches.
         if not GetText(LineObject, 'journalTemplateName', NewTemplateName) then
@@ -222,7 +235,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             NewBatchName := FitText(NewBatchName, 'journalBatchName', MaxStrLen(GenJournalLine."Journal Batch Name"));
             // Rename() skips the table relation, so an unknown batch would otherwise be accepted.
             if not GenJournalBatch.Get(NewTemplateName, NewBatchName) then
-                Error('Line %1: journal batch %2 in template %3 not found.', LineIndex, NewBatchName, NewTemplateName);
+                Error('%1: journal batch %2 in template %3 not found.', LineRef(LineIndex), NewBatchName, NewTemplateName);
             GenJournalLine.Rename(NewTemplateName, NewBatchName, NewLineNo);
             GenJournalLine.UpdateJournalBatchID();
         end;
@@ -477,7 +490,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
     local procedure FitText(Value: Text; FieldKey: Text; MaxLength: Integer): Text
     begin
         if StrLen(Value) > MaxLength then
-            Error('Line %1: "%2" is %3 characters, but "%4" allows at most %5.', CurrentLineIndex, Value, StrLen(Value), FieldKey, MaxLength);
+            Error('%1: "%2" is %3 characters, but "%4" allows at most %5.', LineRef(CurrentLineIndex), Value, StrLen(Value), FieldKey, MaxLength);
         exit(Value);
     end;
 
@@ -521,26 +534,26 @@ codeunit 71692577 "RTR Journal Line Mgt"
         Canonical: Text;
     begin
         if not ValueToken.IsValue() then
-            Error('Line %1: field "%2" is not supported by this endpoint.', LineIndex, FieldKey);
+            Error('%1: field "%2" is not supported by this endpoint.', LineRef(LineIndex), FieldKey);
 
         // The ordered path reads its keys by exact spelling. A key that only resembles one of
         // them would otherwise be silently dropped — creating a line with no account, or no
         // tax override — so say which spelling to use instead.
         Canonical := CanonicalHandledKey(FieldKey);
         if Canonical <> '' then
-            Error('Line %1: "%2" is not read. Use "%3".', LineIndex, FieldKey, Canonical);
+            Error('%1: "%2" is not read. Use "%3".', LineRef(LineIndex), FieldKey, Canonical);
 
         // Validating Journal Batch Id would move the line out of the bound batch; the id is BC's to assign.
         if (NormalizeFieldName(FieldKey) = 'JOURNALBATCHID') or (NormalizeFieldName(FieldKey) = 'ID') then begin
             // PATCH accepts the line's own batch id sent back unchanged.
             if MatchPatchRules and IsUnchangedValue(RecRef, FieldKey, ValueToken) then
                 exit;
-            Error('Line %1: field "%2" cannot be set; the line belongs to the batch the action is called on.', LineIndex, FieldKey);
+            Error('%1: field "%2" cannot be set; the line belongs to the batch the action is called on.', LineRef(LineIndex), FieldKey);
         end;
 
         // Same fields the OData page accepts, including page extensions installed on this tenant.
         if not FindPageControl(FieldKey, PageControlField) then
-            Error('Line %1: field "%2" is not exposed by workflowGenJournalLines.', LineIndex, FieldKey);
+            Error('%1: field "%2" is not exposed by workflowGenJournalLines.', LineRef(LineIndex), FieldKey);
 
         if MatchPatchRules then begin
             // PATCH ignores system fields (lastModifiedDatetime) and only validates a field whose value changes.
@@ -554,7 +567,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         end;
 
         if (PageControlField.FieldNo = 0) or (PageControlField.TableNo <> Database::"Gen. Journal Line") then
-            Error('Line %1: field "%2" is a page field with no journal line field behind it, so this action cannot set it.', LineIndex, FieldKey);
+            Error('%1: field "%2" is a page field with no journal line field behind it, so this action cannot set it.', LineRef(LineIndex), FieldKey);
 
         FldRef := RecRef.Field(PageControlField.FieldNo);
         SetFieldFromJson(FldRef, ValueToken, FieldKey, LineIndex);
@@ -635,7 +648,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 begin
                     TextValue := ValueToken.AsValue().AsText();
                     if not Evaluate(DateValue, TextValue, 9) then
-                        Error('Line %1: "%2" is not a valid date for field "%3".', LineIndex, TextValue, FieldKey);
+                        Error('%1: "%2" is not a valid date for field "%3".', LineRef(LineIndex), TextValue, FieldKey);
                     FldRef.Validate(DateValue);
                 end;
             FieldType::DateTime:
@@ -644,7 +657,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 begin
                     TextValue := ValueToken.AsValue().AsText();
                     if not Evaluate(GuidValue, TextValue) then
-                        Error('Line %1: "%2" is not a valid id for field "%3".', LineIndex, TextValue, FieldKey);
+                        Error('%1: "%2" is not a valid id for field "%3".', LineRef(LineIndex), TextValue, FieldKey);
                     FldRef.Validate(GuidValue);
                 end;
             FieldType::Option:
@@ -655,11 +668,11 @@ codeunit 71692577 "RTR Journal Line Mgt"
                     // Both spellings OData takes: the user's "1M" and the XML "<1M>".
                     if not Evaluate(DateFormulaValue, TextValue) then
                         if not Evaluate(DateFormulaValue, TextValue, 9) then
-                            Error('Line %1: "%2" is not a valid date formula for field "%3".', LineIndex, TextValue, FieldKey);
+                            Error('%1: "%2" is not a valid date formula for field "%3".', LineRef(LineIndex), TextValue, FieldKey);
                     FldRef.Validate(DateFormulaValue);
                 end;
             else
-                Error('Line %1: field "%2" has a type this endpoint cannot set.', LineIndex, FieldKey);
+                Error('%1: field "%2" has a type this endpoint cannot set.', LineRef(LineIndex), FieldKey);
         end;
     end;
 
@@ -713,7 +726,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         // Validating the member name fails ("can't be evaluated into type Option"); CreateLines keeps that path for now.
         if MatchPatchRules then begin
             if not FindOptionOrdinal(FldRef, Value, Ordinal) then
-                Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, FldRef.OptionMembers);
+                Error('%1: "%2" is not a valid value for field "%3". Valid values: %4.', LineRef(LineIndex), Value, FieldKey, FldRef.OptionMembers);
             FldRef.Validate(Ordinal);
             exit;
         end;
@@ -727,7 +740,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 exit;
             end;
 
-        Error('Line %1: "%2" is not a valid value for field "%3". Valid values: %4.', LineIndex, Value, FieldKey, MemberList);
+        Error('%1: "%2" is not a valid value for field "%3". Valid values: %4.', LineRef(LineIndex), Value, FieldKey, MemberList);
     end;
 
     local procedure FindOptionOrdinal(var FldRef: FieldRef; Value: Text; var Ordinal: Integer): Boolean
@@ -829,7 +842,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             exit('');
 
         if not Evaluate(AccountId, IdText) then
-            Error('Line %1: "%2" is not a valid id for "%3".', LineIndex, IdText, IdKey);
+            Error('%1: "%2" is not a valid id for "%3".', LineRef(LineIndex), IdText, IdKey);
 
         case AccountType of
             AccountType::"G/L Account":
@@ -845,10 +858,10 @@ codeunit 71692577 "RTR Journal Line Mgt"
                 if Vendor.GetBySystemId(AccountId) then
                     exit(Vendor."No.");
             else
-                Error('Line %1: "%2" cannot be resolved for account type %3 — send a number instead.', LineIndex, IdKey, AccountType);
+                Error('%1: "%2" cannot be resolved for account type %3 — send a number instead.', LineRef(LineIndex), IdKey, AccountType);
         end;
 
-        Error('Line %1: no %2 found with id %3.', LineIndex, AccountType, IdText);
+        Error('%1: no %2 found with id %3.', LineRef(LineIndex), AccountType, IdText);
     end;
 
     local procedure ParseAccountType(Value: Text; FieldKey: Text; LineIndex: Integer) AccountType: Enum "Gen. Journal Account Type"
@@ -865,7 +878,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             if UpperCase(Names.Get(i)) = UpperCase(Value) then
                 exit(Enum::"Gen. Journal Account Type".FromInteger(Ordinals.Get(i)));
 
-        Error('Line %1: "%2" is not a valid %3.', LineIndex, Value, FieldKey);
+        Error('%1: "%2" is not a valid %3.', LineRef(LineIndex), Value, FieldKey);
     end;
 
     local procedure ParseGenPostingType(Value: Text; FieldKey: Text; LineIndex: Integer) GenPostingType: Enum "General Posting Type"
@@ -881,7 +894,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             if UpperCase(Names.Get(i)) = UpperCase(Value) then
                 exit(Enum::"General Posting Type".FromInteger(Ordinals.Get(i)));
 
-        Error('Line %1: "%2" is not a valid %3.', LineIndex, Value, FieldKey);
+        Error('%1: "%2" is not a valid %3.', LineRef(LineIndex), Value, FieldKey);
     end;
 
     local procedure ParseSourceType(Value: Text; LineIndex: Integer) SourceType: Enum "Gen. Journal Source Type"
@@ -897,7 +910,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             if UpperCase(Names.Get(i)) = UpperCase(Value) then
                 exit(Enum::"Gen. Journal Source Type".FromInteger(Ordinals.Get(i)));
 
-        Error('Line %1: "%2" is not a valid sourceType.', LineIndex, Value);
+        Error('%1: "%2" is not a valid sourceType.', LineRef(LineIndex), Value);
     end;
 
     local procedure AnyLineHasTaxOverride(LinesArray: JsonArray): Boolean
@@ -1010,7 +1023,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         TextValue := ValueToken.AsValue().AsText();
         if not Evaluate(Value, TextValue, 9) then
-            Error('Line %1: "%2" is not a valid date for "%3".', LineIndex, TextValue, FieldKey);
+            Error('%1: "%2" is not a valid date for "%3".', LineRef(LineIndex), TextValue, FieldKey);
 
         exit(true);
     end;
@@ -1026,7 +1039,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         TextValue := ValueToken.AsValue().AsText();
         if not Evaluate(Value, TextValue) then
-            Error('Line %1: "%2" is not a valid id for "%3".', LineIndex, TextValue, FieldKey);
+            Error('%1: "%2" is not a valid id for "%3".', LineRef(LineIndex), TextValue, FieldKey);
 
         exit(true);
     end;
@@ -1038,7 +1051,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
             exit(false);
 
         if not ValueToken.IsValue() then
-            Error('Line %1: field "%2" must be a plain value.', CurrentLineIndex, FieldKey);
+            Error('%1: field "%2" must be a plain value.', LineRef(CurrentLineIndex), FieldKey);
 
         exit(not ValueToken.AsValue().IsNull());
     end;

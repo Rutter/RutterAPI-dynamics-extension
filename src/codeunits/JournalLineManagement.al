@@ -168,8 +168,6 @@ codeunit 71692577 "RTR Journal Line Mgt"
             DeleteLines(JournalTemplateName, JournalBatchName, DeleteLineIdsJson);
         if not IsEmptyList(UpdateLinesJson) then
             UpdateLines(JournalTemplateName, JournalBatchName, UpdateLinesJson);
-        // UpdateLines leaves PATCH rules on; created lines must behave exactly as in CreateLines.
-        MatchPatchRules := false;
         CreatedIdsJson := '[]';
         if not IsEmptyList(CreateLinesJson) then
             CreatedIdsJson := CreateLines(JournalTemplateName, JournalBatchName, CreateLinesJson);

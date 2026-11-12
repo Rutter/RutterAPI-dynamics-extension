@@ -1,5 +1,10 @@
 # Releases
 
+## v22.4.0.5 — 2026-11-12
+- File: Rutter_AccountLink_22.4.0.5.app (signed, Azure Trusted Signing)
+- Submitted to Partner Center for automated validation (~3+ business days)
+- Changes: updateLines action (FND-3328) to update existing journal lines in one transaction, matching BC's PATCH on page 6407 (unchanged fields skipped, option captions, renames checked against an existing batch); replaceLines action (FND-3329) to delete, update and create journal lines in one transaction, with errors naming the failing part. Shipped actions unchanged.
+
 ## v22.4.0.4 — 2026-11-09
 - File: Rutter_AccountLink_22.4.0.4.app (signed, Azure Trusted Signing)
 - Submitted to Partner Center for automated validation (~3+ business days)

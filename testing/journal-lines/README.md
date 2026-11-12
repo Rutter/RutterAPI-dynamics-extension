@@ -5,9 +5,10 @@ batch — once the way the backend does it today, once through the AL action —
 are read back off page 6407 and all 174 fields compared.
 
 ```bash
-testing/journal-lines/run_all.sh <log dir>             # both suites, both companies
+testing/journal-lines/run_all.sh <log dir>             # every suite, both companies
 python3 testing/journal-lines/parity.py usa            # CreateLines — or: uae | both
 python3 testing/journal-lines/update_parity.py usa     # UpdateLines — or: uae | both
+python3 testing/journal-lines/replace_checks.py usa    # ReplaceLines — or: uae | both
 ```
 
 **Mandatory after any change to `src/codeunits/JournalLineManagement.al`**, on both companies.
@@ -26,7 +27,8 @@ token per company and there is no fallback.
 | `parity.py` | the CreateLines suite — the old-way / new-way pair, drivers, entry point |
 | `update_shapes.py` | the UpdateLines catalogue: starting lines, updates, BC rule cases, failure cases |
 | `update_parity.py` | the UpdateLines suite, same structure as `parity.py`, ending with the same-value sweep |
-| `run_all.sh` | both suites on both companies, companies in parallel |
+| `replace_checks.py` | ReplaceLines checks: each part matches its own block, any failing part rolls back all three |
+| `run_all.sh` | every suite on both companies, companies in parallel |
 
-A suite for another block (ReplaceLines) is a sibling of these importing `harness.py`. Not CI:
+A suite for a new block is a sibling of these importing `harness.py`. Not CI:
 live tenant, real credentials.

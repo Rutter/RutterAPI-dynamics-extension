@@ -105,15 +105,16 @@ not evidence: several customer realms carry CRONUS-style demo names.
 ## Run
 
 ```bash
-testing/journal-lines/run_all.sh <log dir>             # both suites, both companies
+testing/journal-lines/run_all.sh <log dir>             # every suite, both companies
 python3 testing/journal-lines/parity.py usa            # CreateLines, one company
 python3 testing/journal-lines/update_parity.py usa     # UpdateLines, one company
+python3 testing/journal-lines/replace_checks.py usa    # ReplaceLines, one company
 ```
 
-`run_all.sh` runs the two companies in parallel and the two suites one after the other (they
-share a batch), writing `update_<company>.log` and `create_<company>.log`. Cases run on 4
+`run_all.sh` runs the two companies in parallel and the suites one after the other (they
+share a batch), writing `update_`, `create_` and `replace_<company>.log`. Cases run on 4
 threads (`WORKERS` in `harness.py`; keep it low, BC Online throttles concurrent requests per
-user). It exits non-zero unless all four suites pass. Run it in the background and read the
+user). It exits non-zero unless every suite passes. Run it in the background and read the
 logs rather than blocking.
 
 The UpdateLines suite ends with a **sweep**: each page 6407 field sent back with the value the
@@ -193,7 +194,8 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
   ```
   That attribute holds the complete request body the backend sent. Retarget it to the sandbox
   accounts and add it to `shapes()` with a comment naming its source.
-- **A new operation** (ReplaceLines) is a sibling of `parity.py` and `update_parity.py`
+- **A new operation** (ReplaceLines only composes the others, so `replace_checks.py` tests
+  the composition, not fields) is a sibling of `parity.py` and `update_parity.py`
   importing `harness`: supply its own "old way" / "new way" pair and its own shapes file.
   `SetDimensions` additionally needs a comparator for the `dimensionSetLines` sub-collection —
   the flat 174-field diff does not cover it.

@@ -420,9 +420,164 @@ codeunit 71692577 "RTR Journal Line Mgt"
 
         ApplyExtraFields(GenJournalLine, LineObject, LineIndex);
 
+        // After every account and customer validate: each of those rebuilds the dimension set
+        // from defaults, which would drop the dimensions applied here.
+        ApplyDimensionSetLines(GenJournalLine, LineObject, LineIndex);
+
         // Last: every validate above recalculates the VAT amount BC computed for itself.
         if GetDecimal(LineObject, 'RTRVATAmountAPI', DecValue) then
             ApplyVatAmountOverride(GenJournalLine, DecValue);
+    end;
+
+    // Sets dimensions on existing lines of a batch in one transaction, for callers that need
+    // dimensions without creating lines. Same semantics as dimensionSetLines on CreateLines.
+    // Payload: [{"id": "<line SystemId>", "dimensionSetLines": [{"code": "...", "valueCode": "..."}]}]
+    procedure SetDimensions(JournalTemplateName: Code[10]; JournalBatchName: Code[10]; LinesJson: Text) UpdatedCount: Integer
+    var
+        GenJournalLine: Record "Gen. Journal Line";
+        LinesArray: JsonArray;
+        LineToken: JsonToken;
+        LineObject: JsonObject;
+        IdText: Text;
+        LineId: Guid;
+        LineIndex: Integer;
+    begin
+        if not LinesArray.ReadFrom(LinesJson) then
+            Error('Invalid lines payload: could not parse JSON.');
+
+        if LinesArray.Count = 0 then
+            Error('At least one line must be provided.');
+
+        foreach LineToken in LinesArray do begin
+            LineIndex += 1;
+            CurrentLineIndex := LineIndex;
+            if not LineToken.IsObject() then
+                Error('%1: must be an object.', LineRef(LineIndex));
+            LineObject := LineToken.AsObject();
+
+            if not GetText(LineObject, 'id', IdText) then
+                Error('%1: "id" is required.', LineRef(LineIndex));
+            if not Evaluate(LineId, IdText) then
+                Error('%1: "%2" is not a valid id.', LineRef(LineIndex), IdText);
+            if not HasDimensionSetLines(LineObject) then
+                Error('%1: "dimensionSetLines" is required.', LineRef(LineIndex));
+
+            GenJournalLine.Reset();
+            GenJournalLine.SetRange("Journal Template Name", JournalTemplateName);
+            GenJournalLine.SetRange("Journal Batch Name", JournalBatchName);
+            GenJournalLine.SetRange(SystemId, LineId);
+            if not GenJournalLine.FindFirst() then
+                Error('%1: journal line %2 not found in batch %3.', LineRef(LineIndex), LineId, JournalBatchName);
+
+            ApplyDimensionSetLines(GenJournalLine, LineObject, LineIndex);
+            GenJournalLine.Modify(true);
+            UpdatedCount += 1;
+        end;
+    end;
+
+    local procedure HasDimensionSetLines(LineObject: JsonObject): Boolean
+    var
+        DimsToken: JsonToken;
+    begin
+        if not LineObject.Get('dimensionSetLines', DimsToken) then
+            exit(false);
+        if DimsToken.IsValue() then
+            exit(not DimsToken.AsValue().IsNull());
+        exit(true);
+    end;
+
+    // Merges the sent dimensions into the line's current set: codes the line already carries
+    // (account defaults) are kept, a sent code replaces the value for that code. Setting the
+    // same values again yields the same set, so a retry never duplicates anything.
+    local procedure ApplyDimensionSetLines(var GenJournalLine: Record "Gen. Journal Line"; LineObject: JsonObject; LineIndex: Integer)
+    var
+        TempDimSetEntry: Record "Dimension Set Entry" temporary;
+        DimMgt: Codeunit DimensionManagement;
+        DimsToken: JsonToken;
+        DimToken: JsonToken;
+        DimObject: JsonObject;
+        DimensionCode: Code[20];
+        DimensionValueCode: Code[20];
+        SeenCodes: List of [Code[20]];
+    begin
+        if not HasDimensionSetLines(LineObject) then
+            exit;
+
+        LineObject.Get('dimensionSetLines', DimsToken);
+        if not DimsToken.IsArray() then
+            Error('%1: "dimensionSetLines" must be an array.', LineRef(LineIndex));
+
+        DimMgt.GetDimensionSet(TempDimSetEntry, GenJournalLine."Dimension Set ID");
+
+        foreach DimToken in DimsToken.AsArray() do begin
+            if not DimToken.IsObject() then
+                Error('%1: each entry in "dimensionSetLines" must be an object.', LineRef(LineIndex));
+            DimObject := DimToken.AsObject();
+            ReadDimensionEntry(DimObject, LineIndex, DimensionCode, DimensionValueCode);
+
+            if SeenCodes.Contains(DimensionCode) then
+                Error('%1: dimension %2 is sent more than once.', LineRef(LineIndex), DimensionCode);
+            SeenCodes.Add(DimensionCode);
+
+            CheckDimensionValue(DimensionCode, DimensionValueCode, LineIndex);
+            SetDimSetEntry(TempDimSetEntry, DimensionCode, DimensionValueCode);
+        end;
+
+        GenJournalLine."Dimension Set ID" := DimMgt.GetDimensionSetID(TempDimSetEntry);
+        DimMgt.UpdateGlobalDimFromDimSetID(
+            GenJournalLine."Dimension Set ID", GenJournalLine."Shortcut Dimension 1 Code", GenJournalLine."Shortcut Dimension 2 Code");
+    end;
+
+    local procedure ReadDimensionEntry(DimObject: JsonObject; LineIndex: Integer; var DimensionCode: Code[20]; var DimensionValueCode: Code[20])
+    var
+        FieldKeys: List of [Text];
+        FieldKey: Text;
+        TextValue: Text;
+    begin
+        FieldKeys := DimObject.Keys();
+        foreach FieldKey in FieldKeys do
+            if (FieldKey <> 'code') and (FieldKey <> 'valueCode') then
+                Error('%1: field "%2" in "dimensionSetLines" is not supported. Send "code" and "valueCode".', LineRef(LineIndex), FieldKey);
+
+        if not GetText(DimObject, 'code', TextValue) or (TextValue = '') then
+            Error('%1: "code" is required in each entry of "dimensionSetLines".', LineRef(LineIndex));
+        DimensionCode := CopyStr(UpperCase(FitText(TextValue, 'code', MaxStrLen(DimensionCode))), 1, MaxStrLen(DimensionCode));
+
+        if not GetText(DimObject, 'valueCode', TextValue) or (TextValue = '') then
+            Error('%1: "valueCode" is required for dimension %2.', LineRef(LineIndex), DimensionCode);
+        DimensionValueCode := CopyStr(UpperCase(FitText(TextValue, 'valueCode', MaxStrLen(DimensionValueCode))), 1, MaxStrLen(DimensionValueCode));
+    end;
+
+    local procedure CheckDimensionValue(DimensionCode: Code[20]; DimensionValueCode: Code[20]; LineIndex: Integer)
+    var
+        Dimension: Record Dimension;
+        DimensionValue: Record "Dimension Value";
+    begin
+        if not Dimension.Get(DimensionCode) then
+            Error('%1: dimension %2 does not exist.', LineRef(LineIndex), DimensionCode);
+        if Dimension.Blocked then
+            Error('%1: dimension %2 is blocked.', LineRef(LineIndex), DimensionCode);
+        if not DimensionValue.Get(DimensionCode, DimensionValueCode) then
+            Error('%1: dimension %2 has no value %3.', LineRef(LineIndex), DimensionCode, DimensionValueCode);
+        if DimensionValue.Blocked then
+            Error('%1: value %3 of dimension %2 is blocked.', LineRef(LineIndex), DimensionCode, DimensionValueCode);
+    end;
+
+    local procedure SetDimSetEntry(var TempDimSetEntry: Record "Dimension Set Entry" temporary; DimensionCode: Code[20]; DimensionValueCode: Code[20])
+    begin
+        TempDimSetEntry.Reset();
+        TempDimSetEntry.SetRange("Dimension Code", DimensionCode);
+        if TempDimSetEntry.FindFirst() then begin
+            TempDimSetEntry.Validate("Dimension Value Code", DimensionValueCode);
+            TempDimSetEntry.Modify();
+        end else begin
+            TempDimSetEntry.Init();
+            TempDimSetEntry."Dimension Set ID" := 0;
+            TempDimSetEntry.Validate("Dimension Code", DimensionCode);
+            TempDimSetEntry.Validate("Dimension Value Code", DimensionValueCode);
+            TempDimSetEntry.Insert();
+        end;
+        TempDimSetEntry.Reset();
     end;
 
     // Puts back what validating Account No. copied off the account (see GetGLAccount in
@@ -823,6 +978,7 @@ codeunit 71692577 "RTR Journal Line Mgt"
         HandledKeys.Add('sourceType');
         HandledKeys.Add('customerId');
         HandledKeys.Add('RTRVATAmountAPI');
+        HandledKeys.Add('dimensionSetLines');
     end;
 
     // Account number wins; an id is resolved to one so both take the same validated path.

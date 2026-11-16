@@ -109,6 +109,7 @@ testing/journal-lines/run_all.sh <log dir>             # every suite, both compa
 python3 testing/journal-lines/parity.py usa            # CreateLines, one company
 python3 testing/journal-lines/update_parity.py usa     # UpdateLines, one company
 python3 testing/journal-lines/replace_checks.py usa    # ReplaceLines, one company
+python3 testing/journal-lines/dim_checks.py usa        # dimensions, one company
 ```
 
 `run_all.sh` runs the two companies in parallel and the suites one after the other (they
@@ -197,8 +198,9 @@ Add an entry only with the reason written down. An unexplained entry is a hidden
 - **A new operation** (ReplaceLines only composes the others, so `replace_checks.py` tests
   the composition, not fields) is a sibling of `parity.py` and `update_parity.py`
   importing `harness`: supply its own "old way" / "new way" pair and its own shapes file.
-  `SetDimensions` additionally needs a comparator for the `dimensionSetLines` sub-collection —
-  the flat 174-field diff does not cover it.
+  The flat 174-field diff does not cover the `dimensionSetLines` sub-collection; `dim_checks.py`
+  reads it directly. It posts one balanced pair per company to check the G/L entries, so each
+  run leaves two small posted entries (document `DIM…`) in the sandbox ledger.
 - **When the swaps roll out** the legacy OData path stops being production, and A/B against it
   stops meaning much. At that point record the fields per shape once and assert against the
   snapshot instead, keeping the suite alive as a plain regression test.

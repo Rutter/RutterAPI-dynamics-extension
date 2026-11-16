@@ -9,6 +9,7 @@ testing/journal-lines/run_all.sh <log dir>             # every suite, both compa
 python3 testing/journal-lines/parity.py usa            # CreateLines — or: uae | both
 python3 testing/journal-lines/update_parity.py usa     # UpdateLines — or: uae | both
 python3 testing/journal-lines/replace_checks.py usa    # ReplaceLines — or: uae | both
+python3 testing/journal-lines/dim_checks.py usa        # dimensionSetLines / setDimensions — or: uae | both
 ```
 
 **Mandatory after any change to `src/codeunits/JournalLineManagement.al`**, on both companies.
@@ -28,6 +29,7 @@ token per company and there is no fallback.
 | `update_shapes.py` | the UpdateLines catalogue: starting lines, updates, BC rule cases, failure cases |
 | `update_parity.py` | the UpdateLines suite, same structure as `parity.py`, ending with the same-value sweep |
 | `replace_checks.py` | ReplaceLines checks: each part matches its own block, any failing part rolls back all three |
+| `dim_checks.py` | dimension checks on every block that takes `dimensionSetLines`, plus `setDimensions`: merge with defaults, shortcut codes, rollback, validation, posted G/L entries |
 | `run_all.sh` | every suite on both companies, companies in parallel |
 
 A suite for a new block is a sibling of these importing `harness.py`. Not CI:

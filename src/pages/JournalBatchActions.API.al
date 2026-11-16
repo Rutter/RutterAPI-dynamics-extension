@@ -76,7 +76,7 @@ page 71692592 "RTR Journal Batch Actions API"
     //
     // Call via:
     //   POST .../journalBatchActions({systemId})/Microsoft.NAV.createLines
-    //   Body: { "linesJson": "[{\"accountType\":\"G/L Account\",\"accountNumber\":\"10100\",\"amount\":25}]" }
+    //   Body: { "linesJson": "[{\"accountType\":\"G/L Account\",\"accountNumber\":\"10100\",\"amount\":25,\"dimensionSetLines\":[{\"code\":\"DEPARTMENT\",\"valueCode\":\"SALES\"}]}]" }
     [ServiceEnabled]
     procedure createLines(LinesJson: Text): Text
     var
@@ -112,6 +112,21 @@ page 71692592 "RTR Journal Batch Actions API"
         JournalLineMgt: Codeunit "RTR Journal Line Mgt";
     begin
         exit(JournalLineMgt.ReplaceLines(Rec."Journal Template Name", Rec.Name, DeleteLineIdsJson, UpdateLinesJson, CreateLinesJson));
+    end;
+
+    // Sets dimensions on existing lines of this batch in a single atomic call, merging into the
+    // dimensions each line already has — see JournalLineManagement.al. createLines takes the same
+    // dimensionSetLines per line; this is for callers that are not creating lines.
+    //
+    // Call via:
+    //   POST .../journalBatchActions({systemId})/Microsoft.NAV.setDimensions
+    //   Body: { "linesJson": "[{\"id\":\"<lineSystemId>\",\"dimensionSetLines\":[{\"code\":\"DEPARTMENT\",\"valueCode\":\"SALES\"}]}]" }
+    [ServiceEnabled]
+    procedure setDimensions(LinesJson: Text): Integer
+    var
+        JournalLineMgt: Codeunit "RTR Journal Line Mgt";
+    begin
+        exit(JournalLineMgt.SetDimensions(Rec."Journal Template Name", Rec.Name, LinesJson));
     end;
 
     // Posts only the given lines, not the whole batch — see JournalLineManagement.al.
